@@ -3,6 +3,7 @@ package com.lvmp.customerstatements_springboot.service;
 import com.lvmp.customerstatements_springboot.model.request.UploadStatementRequest;
 import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
+import com.lvmp.customerstatements_springboot.exception.S3UploadException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
@@ -38,15 +40,19 @@ public class StatementService {
                 .contentType(request.getFile().getContentType())
                 .build();
 
-        s3Client.putObject(
-                putObjectRequest,
-                RequestBody.fromInputStream(
-                        request.getFile().getInputStream(),
-                        request.getFile().getSize()
-                )
-        );
+        try {
+            s3Client.putObject(
+                    putObjectRequest,
+                    RequestBody.fromInputStream(
+                            request.getFile().getInputStream(),
+                            request.getFile().getSize()
+                    )
+            );
+        } catch (S3Exception e) {
+            log.error("Failed to upload statement ({}) to s3", documentId, e);
+            throw new S3UploadException("We couldn't upload your statement right now. Please try again later.");
+        }
 
-        log.info("Successfully uploaded statement ({}) to s3", documentId);
         return ResponseEntity.ok().body(UploadDocumentResponse.builder()
                 .documentId(documentId)
                 .build());
