@@ -15,19 +15,26 @@ public class GlobalExceptionHandler {
     private static final String AN_ERROR_OCCURRED = "An unexpected error occurred";
     private static final String FILE_PROCESSING_ERROR = "An error occurred while processing your file";
     private static final String VALIDATION_FAILED = "Validation failed";
+    private static final String S3_UPLOAD_ERROR = "An error occurred while uploading your file";
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleArgumentNotValidException(MethodArgumentNotValidException e) {
         log.error(e.getMessage(), e);
 
-        String validationDetails = e.getBindingResult().getFieldErrors().stream()
-                .map(err -> err.getField() + ": " + err.getDefaultMessage())
-                .toString();
-
         return ResponseEntity.badRequest().body(
                 ErrorResponse.builder()
                         .message(VALIDATION_FAILED)
-                        .description(validationDetails)
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(S3UploadException.class)
+    public ResponseEntity<ErrorResponse> handleS3UploadException(S3UploadException e) {
+        log.error(e.getMessage(), e);
+
+        return ResponseEntity.badRequest().body(
+                ErrorResponse.builder()
+                        .message(S3_UPLOAD_ERROR)
                         .build()
         );
     }
@@ -39,7 +46,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.internalServerError().body(
                 ErrorResponse.builder()
                         .message(FILE_PROCESSING_ERROR)
-                        .description(e.getMessage())
                         .build()
         );
     }
@@ -51,7 +57,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.internalServerError().body(
                 ErrorResponse.builder()
                         .message(AN_ERROR_OCCURRED)
-                        .description(e.getMessage())
                         .build()
         );
     }
