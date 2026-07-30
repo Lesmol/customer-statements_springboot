@@ -24,6 +24,6 @@ public class StatementsController {
 
     @GetMapping("/{documentId}")
     public ResponseEntity<GetDocumentResponse> getStatement(@PathVariable String documentId) {
-        return statementService.getStatements(documentId);
+        return statementService.getStatement(documentId);
     }
 }

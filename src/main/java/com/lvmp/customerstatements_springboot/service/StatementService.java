@@ -58,7 +58,7 @@ public class StatementService {
                 .build());
     }
 
-    public ResponseEntity<GetDocumentResponse> getStatements(String documentId) {
+    public ResponseEntity<GetDocumentResponse> getStatement(String documentId) {
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)
                 .key(documentId)
@@ -73,6 +73,7 @@ public class StatementService {
 
         return ResponseEntity.ok().body(GetDocumentResponse.builder()
                 .url(presignedGetObjectRequest.url().toString())
+                .expiresAt(presignedGetObjectRequest.expiration())
                 .build());
     }
 }
