@@ -28,7 +28,7 @@ import java.util.UUID;
 public class StatementService {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
-    @Value("${aws.s3.bucket-name}")
+    @Value("${app.s3.bucket-name}")
     private String bucketName;
 
     public ResponseEntity<UploadDocumentResponse> uploadStatement(UploadStatementRequest request) throws IOException {

@@ -1,6 +1,11 @@
 spring:
-  application:
-    name: customer-statements_springboot
-aws:
+  cloud:
+    aws:
+      credentials:
+        profile:
+          name: ${APP_PROFILE}
+      region:
+        static: ${REGION}
+app:
   s3:
     bucket-name: ${BUCKET_NAME}
