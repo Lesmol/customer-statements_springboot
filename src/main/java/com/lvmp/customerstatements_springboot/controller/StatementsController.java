@@ -18,7 +18,7 @@ public class StatementsController {
     private final StatementService statementService;
 
     @PostMapping("/upload-document")
-    public ResponseEntity<UploadDocumentResponse> uploadStatement(@Valid UploadStatementRequest request) throws IOException {
+    public ResponseEntity<UploadDocumentResponse> uploadStatement(@Valid @ModelAttribute UploadStatementRequest request) throws IOException {
         return statementService.uploadStatement(request);
     }
 
