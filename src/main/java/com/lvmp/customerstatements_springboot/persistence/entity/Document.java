@@ -1,4 +1,4 @@
-package com.lvmp.customerstatements_springboot.persistence;
+package com.lvmp.customerstatements_springboot.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
