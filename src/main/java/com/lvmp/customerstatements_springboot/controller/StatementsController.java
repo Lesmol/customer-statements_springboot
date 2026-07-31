@@ -4,7 +4,6 @@ import com.lvmp.customerstatements_springboot.model.request.UploadStatementReque
 import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse;
 import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
-import com.lvmp.customerstatements_springboot.persistence.Document;
 import com.lvmp.customerstatements_springboot.service.StatementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
