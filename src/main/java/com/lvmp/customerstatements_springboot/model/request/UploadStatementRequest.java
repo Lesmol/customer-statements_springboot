@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class UploadStatementRequest {
     @ValidStatementFile
     private MultipartFile file;

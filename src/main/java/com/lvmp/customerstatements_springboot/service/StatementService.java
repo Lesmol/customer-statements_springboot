@@ -1,9 +1,15 @@
 package com.lvmp.customerstatements_springboot.service;
 
+import com.lvmp.customerstatements_springboot.exception.DocumentNotFoundException;
 import com.lvmp.customerstatements_springboot.model.request.UploadStatementRequest;
 import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse;
+import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
 import com.lvmp.customerstatements_springboot.exception.S3UploadException;
+import com.lvmp.customerstatements_springboot.persistence.Document;
+import com.lvmp.customerstatements_springboot.persistence.DocumentRepository;
+import com.lvmp.customerstatements_springboot.persistence.DocumentRetrieval;
+import com.lvmp.customerstatements_springboot.persistence.DocumentRetrievalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +26,8 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -28,15 +36,17 @@ import java.util.UUID;
 public class StatementService {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
+    private final DocumentRepository documentRepository;
+    private final DocumentRetrievalRepository documentRetrievalRepository;
     @Value("${app.s3.bucket-name}")
     private String bucketName;
 
-    public ResponseEntity<UploadDocumentResponse> uploadStatement(UploadStatementRequest request) throws IOException {
-        String documentId = UUID.randomUUID().toString();
+    public ResponseEntity<UploadDocumentResponse> uploadStatement(UUID userId, UploadStatementRequest request) throws IOException {
+        UUID documentId = UUID.randomUUID();
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(documentId)
+                .key(documentId.toString())
                 .contentType(request.getFile().getContentType())
                 .build();
 
@@ -53,27 +63,60 @@ public class StatementService {
             throw new S3UploadException("We couldn't upload your statement right now. Please try again later.");
         }
 
+        documentRepository.save(Document.builder()
+                .id(documentId)
+                .userId(userId)
+                .uploadedAt(Instant.now())
+                .build());
+
         return ResponseEntity.ok().body(UploadDocumentResponse.builder()
-                .documentId(documentId)
+                .documentId(documentId.toString())
                 .build());
     }
 
-    public ResponseEntity<GetDocumentResponse> getStatement(String documentId) {
+    public ResponseEntity<GetDocumentResponse> getStatement(UUID userID, UUID documentId) {
+        if (!documentRepository.existsByIdAndUserId(documentId, userID)) {
+            throw new DocumentNotFoundException("No document found with ID: " + documentId);
+        }
+
+        Duration expiresAt = Duration.ofMinutes(5);
+
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)
-                .key(documentId)
+                .key(documentId.toString())
                 .build();
 
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(5))
+                .signatureDuration(expiresAt)
                 .getObjectRequest(getObjectRequest)
                 .build();
 
         PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(presignRequest);
 
+        documentRetrievalRepository.save(DocumentRetrieval.builder()
+                .documentId(documentId)
+                .expiredAt(Instant.now()
+                        .plus(expiresAt))
+                .retrievedAt(Instant.now())
+                .build());
+
         return ResponseEntity.ok().body(GetDocumentResponse.builder()
                 .url(presignedGetObjectRequest.url().toString())
                 .expiresAt(presignedGetObjectRequest.expiration())
                 .build());
+    }
+
+    public ResponseEntity<List<GetUserDocumentsResponse>> getStatements(UUID userID) {
+        List<Document> documents = documentRepository.getDocumentsByUserId(userID);
+        return ResponseEntity.ok().body(toDocumentResponse(documents));
+    }
+
+    private List<GetUserDocumentsResponse> toDocumentResponse(List<Document> documents) {
+        return documents.stream()
+                .map(doc -> GetUserDocumentsResponse.builder()
+                        .documentId(doc.getId())
+                        .uploadedAt(doc.getUploadedAt())
+                        .build())
+                .toList();
     }
 }
