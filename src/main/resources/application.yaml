@@ -1,4 +1,12 @@
 spring:
+  datasource:
+    url: ${DB_HOST}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
   cloud:
     aws:
       credentials:
@@ -9,3 +17,6 @@ spring:
 app:
   s3:
     bucket-name: ${BUCKET_NAME}
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
