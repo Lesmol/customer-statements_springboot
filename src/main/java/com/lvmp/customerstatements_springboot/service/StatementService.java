@@ -1,6 +1,7 @@
 package com.lvmp.customerstatements_springboot.service;
 
 import com.lvmp.customerstatements_springboot.exception.DocumentNotFoundException;
+import com.lvmp.customerstatements_springboot.exception.DocumentSaveException;
 import com.lvmp.customerstatements_springboot.model.request.UploadStatementRequest;
 import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse;
 import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
@@ -13,10 +14,14 @@ import com.lvmp.customerstatements_springboot.persistence.repository.DocumentRet
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -58,20 +63,27 @@ public class StatementService {
                             request.getFile().getSize()
                     )
             );
-        } catch (S3Exception e) {
+
+            documentRepository.save(Document.builder()
+                    .id(documentId)
+                    .userId(userId)
+                    .uploadedAt(Instant.now())
+                    .build());
+
+            return ResponseEntity.ok().body(UploadDocumentResponse.builder()
+                    .documentId(documentId.toString())
+                    .build());
+        } catch (SdkClientException | S3Exception e) {
             log.error("Failed to upload statement ({}) to s3", documentId, e);
             throw new S3UploadException("We couldn't upload your statement right now. Please try again later.");
+        } catch (DataAccessException | IllegalArgumentException e) {
+            log.error("Failed to save {} to database", documentId, e);
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(documentId.toString())
+                    .build());
+            throw new DocumentSaveException("We couldn't save your statement right now. Please try again later.");
         }
-
-        documentRepository.save(Document.builder()
-                .id(documentId)
-                .userId(userId)
-                .uploadedAt(Instant.now())
-                .build());
-
-        return ResponseEntity.ok().body(UploadDocumentResponse.builder()
-                .documentId(documentId.toString())
-                .build());
     }
 
     public ResponseEntity<GetDocumentResponse> getStatement(UUID userID, UUID documentId) {

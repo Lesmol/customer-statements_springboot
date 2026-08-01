@@ -16,7 +16,7 @@ public class GlobalExceptionHandler {
     private static final String AN_ERROR_OCCURRED = "An unexpected error occurred";
     private static final String FILE_PROCESSING_ERROR = "An error occurred while processing your file";
     private static final String VALIDATION_FAILED = "Validation failed";
-    private static final String S3_UPLOAD_ERROR = "An error occurred while uploading your file";
+    private static final String DOCUMENT_SAVE_ERROR = "An error occurred while uploading your statement";
     private static final String DOCUMENT_NOT_FOUND = "Document not found";
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -30,13 +30,14 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(S3UploadException.class)
-    public ResponseEntity<ErrorResponse> handleS3UploadException(S3UploadException e) {
+    @ExceptionHandler({S3UploadException.class, DocumentSaveException.class})
+    public ResponseEntity<ErrorResponse> handleUploadException(Exception e) {
         log.error(e.getMessage(), e);
 
-        return ResponseEntity.badRequest().body(
+        return ResponseEntity.internalServerError().body(
                 ErrorResponse.builder()
-                        .message(S3_UPLOAD_ERROR)
+                        .message(DOCUMENT_SAVE_ERROR)
+                        .description(e.getMessage())
                         .build()
         );
     }
