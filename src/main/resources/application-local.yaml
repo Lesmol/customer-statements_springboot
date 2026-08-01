@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    default-property-inclusion: non_null
   datasource:
     url: ${DB_HOST:jdbc:postgresql://postgres:5432/customer_statements}
     username: ${POSTGRES_USER:postgres}

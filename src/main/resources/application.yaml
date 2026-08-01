@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    default-property-inclusion: non_null
   datasource:
     url: ${DB_HOST}
     username: ${POSTGRES_USER}
