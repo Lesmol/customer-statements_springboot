@@ -2,7 +2,7 @@ package com.lvmp.customerstatements_springboot.service;
 
 import com.lvmp.customerstatements_springboot.model.request.LoginRequest;
 import com.lvmp.customerstatements_springboot.model.response.AuthResponse;
-import com.lvmp.customerstatements_springboot.persistence.UserRepository;
+import com.lvmp.customerstatements_springboot.persistence.repository.UserRepository;
 import com.lvmp.customerstatements_springboot.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

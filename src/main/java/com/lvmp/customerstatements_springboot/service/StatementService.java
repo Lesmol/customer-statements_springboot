@@ -6,10 +6,10 @@ import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse
 import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
 import com.lvmp.customerstatements_springboot.exception.S3UploadException;
-import com.lvmp.customerstatements_springboot.persistence.Document;
-import com.lvmp.customerstatements_springboot.persistence.DocumentRepository;
-import com.lvmp.customerstatements_springboot.persistence.DocumentRetrieval;
-import com.lvmp.customerstatements_springboot.persistence.DocumentRetrievalRepository;
+import com.lvmp.customerstatements_springboot.persistence.entity.Document;
+import com.lvmp.customerstatements_springboot.persistence.repository.DocumentRepository;
+import com.lvmp.customerstatements_springboot.persistence.entity.DocumentRetrieval;
+import com.lvmp.customerstatements_springboot.persistence.repository.DocumentRetrievalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

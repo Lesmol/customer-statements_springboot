@@ -1,6 +1,6 @@
 package com.lvmp.customerstatements_springboot.security;
 
-import com.lvmp.customerstatements_springboot.persistence.UserRepository;
+import com.lvmp.customerstatements_springboot.persistence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.User;
