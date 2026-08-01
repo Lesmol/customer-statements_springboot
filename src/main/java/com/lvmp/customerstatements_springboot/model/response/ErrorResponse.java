@@ -1,4 +1,4 @@
-package com.lvmp.customerstatements_springboot.model;
+package com.lvmp.customerstatements_springboot.model.response;
 
 import lombok.Builder;
 import lombok.Data;
