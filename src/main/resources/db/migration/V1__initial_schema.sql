@@ -3,21 +3,21 @@ CREATE TABLE users
     id         UUID PRIMARY KEY,
     username   VARCHAR(255) NOT NULL UNIQUE,
     password   VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ  NOT NULL
 );
 
 CREATE TABLE documents
 (
     id          UUID PRIMARY KEY,
     user_id     UUID        NOT NULL REFERENCES users (id),
-    uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    uploaded_at TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE document_retrievals
 (
     id           UUID PRIMARY KEY,
     document_id  UUID        NOT NULL REFERENCES documents (id),
-    retrieved_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    retrieved_at TIMESTAMPTZ NOT NULL,
     expired_at   TIMESTAMPTZ NOT NULL
 );
 

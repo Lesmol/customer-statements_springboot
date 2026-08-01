@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.List;
 
 @Component
@@ -30,7 +29,6 @@ public class UserSeeder implements CommandLineRunner {
                             .username(username)
                             .password(passwordEncoder
                                     .encode(DEFAULT_PASSWORD))
-                            .createdAt(Instant.now())
                             .build());
                 });
     }

@@ -66,7 +66,6 @@ public class StatementService {
             documentRepository.save(Document.builder()
                     .id(documentId)
                     .userId(userId)
-                    .uploadedAt(Instant.now())
                     .build());
 
             return ResponseEntity.ok().body(UploadDocumentResponse.builder()
@@ -108,7 +107,6 @@ public class StatementService {
                 .documentId(documentId)
                 .expiredAt(Instant.now()
                         .plus(expiresAt))
-                .retrievedAt(Instant.now())
                 .build());
 
         return ResponseEntity.ok().body(GetDocumentResponse.builder()
