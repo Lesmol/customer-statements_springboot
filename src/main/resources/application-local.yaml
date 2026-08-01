@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${DB_HOST}
-    username: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
+    url: ${DB_HOST:jdbc:postgresql://postgres:5432/customer_statements}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -19,5 +19,5 @@ app:
   s3:
     bucket-name: ${BUCKET_NAME}
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:6Z8oQGGas4y2sJM86rNpgLIybss1IotZbrW60qlL2Jm}
     expiration-ms: ${JWT_EXPIRATION_MS:3600000}
