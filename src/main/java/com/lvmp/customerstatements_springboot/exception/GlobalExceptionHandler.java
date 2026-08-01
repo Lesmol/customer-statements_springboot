@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DocumentNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleDocumentNotFoundException(DocumentNotFoundException e) {
-        log.error(e.getMessage(), e);
+        log.warn(e.getMessage(), e);
 
         return ResponseEntity.status(404).body(
                 ErrorResponse.builder()
