@@ -94,6 +94,7 @@ public class StatementService {
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)
                 .key(documentId.toString())
+                .responseContentDisposition("attachment; filename=statement-%s.pdf".formatted(documentId.toString().substring(0, 8)))
                 .build();
 
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
