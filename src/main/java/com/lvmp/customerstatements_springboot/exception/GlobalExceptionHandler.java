@@ -3,6 +3,7 @@ package com.lvmp.customerstatements_springboot.exception;
 import com.lvmp.customerstatements_springboot.model.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -28,6 +29,16 @@ public class GlobalExceptionHandler {
                         .message(VALIDATION_FAILED)
                         .build()
         );
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException e) {
+        log.error(e.getMessage(), e);
+
+        return ResponseEntity.status(401).body(
+                ErrorResponse.builder()
+                        .message(VALIDATION_FAILED)
+                        .build());
     }
 
     @ExceptionHandler({S3UploadException.class, DocumentSaveException.class})

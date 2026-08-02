@@ -2,6 +2,7 @@ package com.lvmp.customerstatements_springboot.service;
 
 import com.lvmp.customerstatements_springboot.model.request.LoginRequest;
 import com.lvmp.customerstatements_springboot.model.response.AuthResponse;
+import com.lvmp.customerstatements_springboot.persistence.entity.User;
 import com.lvmp.customerstatements_springboot.persistence.repository.UserRepository;
 import com.lvmp.customerstatements_springboot.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ public class AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
-        var user = userRepository.findByUsername(request.getUsername())
+        User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + request.getUsername()));
 
         String token = jwtService.generateToken(user.getId().toString());
