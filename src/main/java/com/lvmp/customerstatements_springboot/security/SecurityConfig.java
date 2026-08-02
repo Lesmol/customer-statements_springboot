@@ -1,5 +1,6 @@
 package com.lvmp.customerstatements_springboot.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,6 +50,9 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling(ex ->
+                        ex.authenticationEntryPoint((_, response, _) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
                 .build();
     }
 }
