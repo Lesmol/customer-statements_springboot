@@ -40,6 +40,7 @@ import java.util.UUID;
 public class StatementService {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
+    private final RedisService redisService;
     private final DocumentRepository documentRepository;
     private final DocumentRetrievalRepository documentRetrievalRepository;
     @Value("${app.s3.bucket-name}")
@@ -89,6 +90,12 @@ public class StatementService {
             throw new DocumentNotFoundException("No document found with ID: " + documentId);
         }
 
+        GetDocumentResponse cachedResponse = redisService.getPreSignedUrl(documentId);
+
+        if (cachedResponse != null) {
+            return ResponseEntity.ok().body(cachedResponse);
+        }
+
         Duration expiresAt = Duration.ofMinutes(5);
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
@@ -110,10 +117,14 @@ public class StatementService {
                         .plus(expiresAt))
                 .build());
 
-        return ResponseEntity.ok().body(GetDocumentResponse.builder()
+        GetDocumentResponse response = GetDocumentResponse.builder()
                 .url(presignedGetObjectRequest.url().toString())
                 .expiresAt(presignedGetObjectRequest.expiration())
-                .build());
+                .build();
+
+        redisService.putPreSignedUrl(documentId, response);
+
+        return ResponseEntity.ok().body(response);
     }
 
     public ResponseEntity<List<GetUserDocumentsResponse>> getStatements(UUID userID) {
