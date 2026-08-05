@@ -38,11 +38,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class StatementServiceTest {
@@ -80,7 +76,7 @@ class StatementServiceTest {
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
         ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
-        verify(documentRepository).save(documentCaptor.capture());
+        verify(documentRepository, times(1)).save(documentCaptor.capture());
         assertEquals(userId, documentCaptor.getValue().getUserId());
         assertNotNull(response.getBody());
         assertEquals(documentCaptor.getValue().getId().toString(), response.getBody().getDocumentId());
@@ -118,7 +114,7 @@ class StatementServiceTest {
         // Then
         assertThrows(DocumentSaveException.class, () -> statementService.uploadStatement(userId, request));
 
-        verify(s3Client).deleteObject(any(DeleteObjectRequest.class));
+        verify(s3Client, times(1)).deleteObject(any(DeleteObjectRequest.class));
     }
 
     @Test
@@ -180,8 +176,8 @@ class StatementServiceTest {
         assertEquals(presignedRequest.url().toString(), response.getBody().getUrl());
         assertEquals(expiresAt, response.getBody().getExpiresAt());
 
-        verify(documentRetrievalRepository).save(any());
-        verify(redisService).putPreSignedUrl(any(), any());
+        verify(documentRetrievalRepository, times(1)).save(any());
+        verify(redisService, times(1)).putPreSignedUrl(any(), any());
     }
 
     private static URL uncheckedUrl(String url) {

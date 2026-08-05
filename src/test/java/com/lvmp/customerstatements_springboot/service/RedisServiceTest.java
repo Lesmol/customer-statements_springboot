@@ -16,10 +16,7 @@ import static com.lvmp.customerstatements_springboot.config.RedisConfig.PRESIGNE
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RedisServiceTest {
@@ -113,7 +110,7 @@ class RedisServiceTest {
         redisService.putPreSignedUrl(documentId, newResponse);
 
         // Then
-        verify(cache).put(documentId, newResponse);
+        verify(cache, times(1)).put(documentId, newResponse);
     }
 
     @Test
@@ -150,6 +147,6 @@ class RedisServiceTest {
         redisService.putPreSignedUrl(documentId, newResponse);
 
         // Then
-        verify(cache).put(documentId, newResponse);
+        verify(cache, times(1)).put(documentId, newResponse);
     }
 }
