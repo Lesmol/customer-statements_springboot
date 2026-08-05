@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -76,6 +77,7 @@ class StatementServiceTest {
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
         ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
+        verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
         verify(documentRepository, times(1)).save(documentCaptor.capture());
         assertEquals(userId, documentCaptor.getValue().getUserId());
         assertNotNull(response.getBody());
@@ -148,6 +150,9 @@ class StatementServiceTest {
         ResponseEntity<GetDocumentResponse> response = statementService.getStatement(userId, documentId);
 
         // Then
+        InOrder calls = inOrder(documentRepository, redisService);
+        calls.verify(documentRepository).existsByIdAndUserId(documentId, userId);
+        calls.verify(redisService).getPreSignedUrl(documentId);
         assertEquals(cached, response.getBody());
         verifyNoInteractions(s3Presigner, documentRetrievalRepository);
     }
