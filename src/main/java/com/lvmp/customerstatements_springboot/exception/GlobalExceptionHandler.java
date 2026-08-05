@@ -2,6 +2,7 @@ package com.lvmp.customerstatements_springboot.exception;
 
 import com.lvmp.customerstatements_springboot.model.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
@@ -24,9 +26,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleArgumentNotValidException(MethodArgumentNotValidException e) {
         log.error(e.getMessage(), e);
 
+        String validationDetails = e.getBindingResult().getFieldErrors().stream()
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+
         return ResponseEntity.badRequest().body(
                 ErrorResponse.builder()
                         .message(VALIDATION_FAILED)
+                        .description(validationDetails)
                         .build()
         );
     }
