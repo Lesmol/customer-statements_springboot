@@ -50,14 +50,6 @@ To stop everything:
 docker compose down
 ```
 
-### Seeded users
-
-On startup (`local` profile only), three users are seeded for testing, all with password `Test@123`:
-
-- `user1`
-- `user2`
-- `user3`
-
 ## API overview
 
 | Method | Path                                 | Description                             |
@@ -69,17 +61,42 @@ On startup (`local` profile only), three users are seeded for testing, all with 
 
 Requests to `/api/statements/**` require an `Authorization: Bearer <token>` header obtained from the login endpoint.
 
+## Testing the application
+
+With `docker compose up --build` running, you can exercise the live API manually, either with Postman or `curl`.
+
+### Manual testing with seeded users
+
+Once `docker compose up --build` is running, three users are seeded automatically by `UserSeeder` (`local` profile only), all with password `Test@123`:
+
+- `user1`
+- `user2`
+- `user3`
+
+Log in as any of them to obtain a JWT, then use that token to call the `/api/statements/**` endpoints.
+
 ### Postman collection
 
 A ready-to-use Postman collection is available at [
-`postman/customer-statements.postman_collection.json`](postman/customer-statements.postman_collection.json). To use it:
+`postman/customer-statements.postman_collection.json`](postman/customer-statements.postman_collection.json). It
+contains four requests (**Login**, **Upload Document**, **Get Download Link**, and **Get All Documents**) and a
+collection-level bearer auth wired to a `token` variable, so you don't need to copy/paste JWTs between requests.
+
+To use it:
 
 1. Download the file (or clone the repo) and open Postman.
 2. **Import** → select the file.
-3. Requests are pointed at `http://localhost:8080`. Run **Login** first; it stores the returned JWT in the `token`
-   collection variable, which the other requests send automatically via the collection-level bearer auth.
-4. For **Get Download Link**, append a document ID to the URL (e.g. `.../api/statements/v1/{documentId}`); use the ID
-   returned by **Upload Document** or one of the `documentId's` returned by **Get All Documents**.
+3. Requests are pointed at `http://localhost:8080`. Run **Login** first; its body defaults to `user1`/`Test@123`
+   (the requests for `user2` and `user3` are included as commented out JSON in the same body; swap them in to test
+   as a different seeded user). A script on the request automatically saves the returned JWT into the `token`
+   collection variable, which every other request sends via `Authorization: Bearer {{token}}`.
+4. Run **Upload Document**, attaching a file in the `file` form field, to create a statement for the logged-in user.
+5. Run **Get All Documents** to list that user's uploaded statements and copy a `documentId` from the response.
+6. For **Get Download Link**, append the `documentId` to the URL (`/api/statements/v1/{documentId}`) to get a
+   download link for that statement.
+
+Auth is per user, logging in as a different seeded user and repeating steps 4 - 6 is a quick way to confirm
+that users can only see their own documents.
 
 ### curl example
 
@@ -93,6 +110,14 @@ curl -X POST http://localhost:8080/api/auth/v1/login \
 curl -X POST http://localhost:8080/api/statements/v1/upload-document \
   -H "Authorization: Bearer TOKEN" \
   -F "file=@/path/to/statement.pdf"
+
+# List your documents
+curl http://localhost:8080/api/statements/v1/documents \
+  -H "Authorization: Bearer TOKEN"
+
+# Get a download link (replace DOCUMENT_ID with an id from the list above)
+curl http://localhost:8080/api/statements/v1/DOCUMENT_ID \
+  -H "Authorization: Bearer TOKEN"
 ```
 
 [![My Skills](https://skillicons.dev/icons?i=aws,java,spring,git,redis,postgres,docker,postman)](https://skillicons.dev)
