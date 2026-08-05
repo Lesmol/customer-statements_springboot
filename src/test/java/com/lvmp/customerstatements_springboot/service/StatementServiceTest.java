@@ -68,12 +68,15 @@ class StatementServiceTest {
 
     @Test
     void uploadStatement_savesToS3AndDatabase_whenBothSucceed() throws Exception {
+        // Given
         UUID userId = UUID.randomUUID();
         UploadStatementRequest request = new UploadStatementRequest();
         request.setFile(new MockMultipartFile("file", "statement.pdf", "application/pdf", "content".getBytes()));
 
+        // When
         ResponseEntity<UploadDocumentResponse> response = statementService.uploadStatement(userId, request);
 
+        // Then
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
         ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
@@ -86,6 +89,7 @@ class StatementServiceTest {
 
     @Test
     void uploadStatement_throwsS3UploadException_andNeverTouchesTheDatabase_whenS3Fails() {
+        // Given
         UUID userId = UUID.randomUUID();
         UploadStatementRequest request = new UploadStatementRequest();
         request.setFile(new MockMultipartFile("file", "statement.pdf", "application/pdf", "content".getBytes()));
@@ -93,6 +97,8 @@ class StatementServiceTest {
         when(s3Client.putObject(any(PutObjectRequest.class), (RequestBody) any()))
                 .thenThrow(S3Exception.builder().message("s3 is down").build());
 
+        // When
+        // Then
         assertThrows(S3UploadException.class, () -> statementService.uploadStatement(userId, request));
 
         verify(documentRepository, never()).save(any());
@@ -100,6 +106,7 @@ class StatementServiceTest {
 
     @Test
     void uploadStatement_throwsDocumentSaveException_andRollsBackTheS3Object_whenDatabaseSaveFails() {
+        // Given
         UUID userId = UUID.randomUUID();
         UploadStatementRequest request = new UploadStatementRequest();
         request.setFile(new MockMultipartFile("file", "statement.pdf", "application/pdf", "content".getBytes()));
@@ -107,6 +114,8 @@ class StatementServiceTest {
         when(documentRepository.save(any(Document.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
+        // When
+        // Then
         assertThrows(DocumentSaveException.class, () -> statementService.uploadStatement(userId, request));
 
         verify(s3Client).deleteObject(any(DeleteObjectRequest.class));
@@ -114,10 +123,13 @@ class StatementServiceTest {
 
     @Test
     void getStatement_throwsDocumentNotFoundException_whenDocumentDoesNotBelongToUser() {
+        // Given
         UUID userId = UUID.randomUUID();
         UUID documentId = UUID.randomUUID();
         when(documentRepository.existsByIdAndUserId(documentId, userId)).thenReturn(false);
 
+        // When
+        // Then
         assertThrows(DocumentNotFoundException.class, () -> statementService.getStatement(userId, documentId));
 
         verifyNoInteractions(redisService, s3Presigner, documentRetrievalRepository);
@@ -125,6 +137,7 @@ class StatementServiceTest {
 
     @Test
     void getStatement_returnsCachedResponse_withoutCallingS3_whenAlreadyInRedis() {
+        // Given
         UUID userId = UUID.randomUUID();
         UUID documentId = UUID.randomUUID();
         GetDocumentResponse cached = GetDocumentResponse.builder()
@@ -135,14 +148,17 @@ class StatementServiceTest {
         when(documentRepository.existsByIdAndUserId(documentId, userId)).thenReturn(true);
         when(redisService.getPreSignedUrl(documentId)).thenReturn(cached);
 
+        // When
         ResponseEntity<GetDocumentResponse> response = statementService.getStatement(userId, documentId);
 
+        // Then
         assertEquals(cached, response.getBody());
         verifyNoInteractions(s3Presigner, documentRetrievalRepository);
     }
 
     @Test
     void getStatement_generatesAndCachesAPresignedUrl_whenNotAlreadyInRedis() {
+        // Given
         UUID userId = UUID.randomUUID();
         UUID documentId = UUID.randomUUID();
 
@@ -156,8 +172,10 @@ class StatementServiceTest {
         when(presignedRequest.expiration()).thenReturn(expiresAt);
         when(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class))).thenReturn(presignedRequest);
 
+        // When
         ResponseEntity<GetDocumentResponse> response = statementService.getStatement(userId, documentId);
 
+        // Then
         assertNotNull(response.getBody());
         assertEquals(presignedRequest.url().toString(), response.getBody().getUrl());
         assertEquals(expiresAt, response.getBody().getExpiresAt());
@@ -176,6 +194,7 @@ class StatementServiceTest {
 
     @Test
     void getStatements_returnsDocumentsMappedForTheGivenUser() {
+        // Given
         UUID userId = UUID.randomUUID();
         Document document = Document.builder()
                 .id(UUID.randomUUID())
@@ -185,8 +204,10 @@ class StatementServiceTest {
 
         when(documentRepository.getDocumentsByUserId(userId)).thenReturn(List.of(document));
 
+        // When
         ResponseEntity<List<GetUserDocumentsResponse>> response = statementService.getStatements(userId);
 
+        // Then
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().size());
         assertEquals(document.getId(), response.getBody().getFirst().getDocumentId());
@@ -195,11 +216,14 @@ class StatementServiceTest {
 
     @Test
     void getStatements_returnsEmptyList_whenUserHasNoDocuments() {
+        // Given
         UUID userId = UUID.randomUUID();
         when(documentRepository.getDocumentsByUserId(userId)).thenReturn(List.of());
 
+        // When
         ResponseEntity<List<GetUserDocumentsResponse>> response = statementService.getStatements(userId);
 
+        // Then
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isEmpty());
     }

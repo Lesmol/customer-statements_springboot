@@ -37,6 +37,7 @@ class RedisServiceTest {
 
     @Test
     void getPreSignedUrl_fetchCachedResponse() {
+        // Given
         UUID documentId = UUID.randomUUID();
         GetDocumentResponse cachedResponse = GetDocumentResponse.builder()
                 .url("https://example.com/presigned")
@@ -46,48 +47,60 @@ class RedisServiceTest {
         when(cacheManager.getCache(PRESIGNED_URLS_CACHE)).thenReturn(cache);
         when(cache.get(documentId, GetDocumentResponse.class)).thenReturn(cachedResponse);
 
+        // When
         GetDocumentResponse response = redisService.getPreSignedUrl(documentId);
 
+        // Then
         assertSame(cachedResponse, response);
     }
 
     @Test
     void getPreSignedUrl_returnsNull_whenNotInCache() {
+        // Given
         UUID documentId = UUID.randomUUID();
 
         when(cacheManager.getCache(PRESIGNED_URLS_CACHE)).thenReturn(cache);
         when(cache.get(documentId, GetDocumentResponse.class)).thenReturn(null);
 
+        // When
         GetDocumentResponse response = redisService.getPreSignedUrl(documentId);
 
+        // Then
         assertNull(response);
     }
 
     @Test
     void getPreSignedUrl_returnsNull_whenCacheDoesNotExist() {
+        // Given
         UUID documentId = UUID.randomUUID();
 
         when(cacheManager.getCache(PRESIGNED_URLS_CACHE)).thenReturn(null);
 
+        // When
         GetDocumentResponse response = redisService.getPreSignedUrl(documentId);
 
+        // Then
         assertNull(response);
     }
 
     @Test
     void getPreSignedUrl_returnsNull_whenCacheThrowsException() {
+        // Given
         UUID documentId = UUID.randomUUID();
 
         when(cacheManager.getCache(PRESIGNED_URLS_CACHE)).thenReturn(cache);
         when(cache.get(documentId, GetDocumentResponse.class)).thenThrow(new RuntimeException("Redis unavailable"));
 
+        // When
         GetDocumentResponse response = redisService.getPreSignedUrl(documentId);
 
+        // Then
         assertNull(response);
     }
 
     @Test
     void putPreSignedUrl_addsResponseToCache() {
+        // Given
         UUID documentId = UUID.randomUUID();
         GetDocumentResponse newResponse = GetDocumentResponse.builder()
                 .url("https://example.com/presigned")
@@ -96,13 +109,16 @@ class RedisServiceTest {
 
         when(cacheManager.getCache(PRESIGNED_URLS_CACHE)).thenReturn(cache);
 
+        // When
         redisService.putPreSignedUrl(documentId, newResponse);
 
+        // Then
         verify(cache).put(documentId, newResponse);
     }
 
     @Test
     void putPreSignedUrl_doesNotThrow_whenCacheDoesNotExist() {
+        // Given
         UUID documentId = UUID.randomUUID();
         GetDocumentResponse newResponse = GetDocumentResponse.builder()
                 .url("https://example.com/presigned")
@@ -111,13 +127,16 @@ class RedisServiceTest {
 
         when(cacheManager.getCache(PRESIGNED_URLS_CACHE)).thenReturn(null);
 
+        // When
         redisService.putPreSignedUrl(documentId, newResponse);
 
+        // Then
         verify(cache, never()).put(any(), any());
     }
 
     @Test
     void putPreSignedUrl_doesNotThrow_whenCachePutFails() {
+        // Given
         UUID documentId = UUID.randomUUID();
         GetDocumentResponse newResponse = GetDocumentResponse.builder()
                 .url("https://example.com/presigned")
@@ -127,8 +146,10 @@ class RedisServiceTest {
         when(cacheManager.getCache(PRESIGNED_URLS_CACHE)).thenReturn(cache);
         doThrow(new RuntimeException("Redis unavailable")).when(cache).put(documentId, newResponse);
 
+        // When
         redisService.putPreSignedUrl(documentId, newResponse);
 
+        // Then
         verify(cache).put(documentId, newResponse);
     }
 }
