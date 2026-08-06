@@ -63,11 +63,13 @@ public class StatementService {
                             request.getFile().getSize()
                     )
             );
+            log.debug("Uploaded statement ({}) to s3 bucket {}", documentId, bucketName);
 
             documentRepository.save(Document.builder()
                     .id(documentId)
                     .userId(userId)
                     .build());
+            log.info("Successfully uploaded statement ({}) for user {}", documentId, userId);
 
             return ResponseEntity.ok().body(UploadDocumentResponse.builder()
                     .documentId(documentId.toString())
@@ -87,12 +89,14 @@ public class StatementService {
 
     public ResponseEntity<GetDocumentResponse> getStatement(UUID userID, UUID documentId) {
         if (!documentRepository.existsByIdAndUserId(documentId, userID)) {
+            log.warn("No document found with ID: {} for user {}", documentId, userID);
             throw new DocumentNotFoundException("No document found with ID: " + documentId);
         }
 
         GetDocumentResponse cachedResponse = redisService.getPreSignedUrl(documentId);
 
         if (cachedResponse != null) {
+            log.debug("Returning cached pre-signed URL for statement ({})", documentId);
             return ResponseEntity.ok().body(cachedResponse);
         }
 
@@ -123,12 +127,14 @@ public class StatementService {
                 .build();
 
         redisService.putPreSignedUrl(documentId, response);
+        log.debug("Generated and cached pre-signed URL for statement ({}), expiring at {}", documentId, response.getExpiresAt());
 
         return ResponseEntity.ok().body(response);
     }
 
     public ResponseEntity<List<GetUserDocumentsResponse>> getStatements(UUID userID) {
         List<Document> documents = documentRepository.getDocumentsByUserId(userID);
+        log.debug("Found {} statement(s) for user {}", documents.size(), userID);
         return ResponseEntity.ok().body(toDocumentResponse(documents));
     }
 
