@@ -7,7 +7,8 @@ authentication.
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
-- An AWS S3 bucket and credentials to access it — see [AWSSETUP.md](AWSSETUP.md) for how to set this up
+- An AWS S3 bucket and credentials to access it — see [AWSSETUP.md](AWSSETUP.md) for how to set this up, or use the
+  [one-click deploy](AWSSETUP.md#quick-start-one-click-deploy) to create the bucket, policy, and IAM user in one step
 
 ## Configuration
 
