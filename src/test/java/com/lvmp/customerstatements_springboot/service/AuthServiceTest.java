@@ -1,5 +1,7 @@
 package com.lvmp.customerstatements_springboot.service;
 
+import com.lvmp.customerstatements_springboot.exception.AuthenticationException;
+import com.lvmp.customerstatements_springboot.exception.UserAlreadyExistsException;
 import com.lvmp.customerstatements_springboot.model.request.LoginRequest;
 import com.lvmp.customerstatements_springboot.model.response.AuthResponse;
 import com.lvmp.customerstatements_springboot.persistence.entity.User;
@@ -97,7 +99,7 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_throwsIllegalStateException_whenAuthenticatedUserIsMissingFromDatabase() {
+    void login_throwsAuthenticationException_whenAuthenticatedUserIsMissingFromDatabase() {
         // Given
         LoginRequest request = new LoginRequest();
         request.setUsername("user1");
@@ -107,8 +109,69 @@ class AuthServiceTest {
 
         // When
         // Then
-        assertThrows(IllegalStateException.class, () -> authService.login(request));
+        assertThrows(AuthenticationException.class, () -> authService.login(request));
 
         verify(jwtService, never()).generateToken(any());
+    }
+
+    @Test
+    void create_returns201_whenSuccessful() {
+        // Given
+        LoginRequest request = new LoginRequest();
+        request.setUsername("user6");
+        request.setPassword("hbkdjswkhbw");
+
+        when(userRepository.findByUsername(request.getUsername())).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded-password");
+
+        // When
+        ResponseEntity<Void> response = authService.create(request);
+
+        // Then
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository, times(1)).save(userCaptor.capture());
+        assertEquals("user6", userCaptor.getValue().getUsername());
+    }
+
+    @Test
+    void create_throwsUserAlreadyExistsException_andNeverSaves_whenUsernameIsTaken() {
+        // Given
+        LoginRequest request = new LoginRequest();
+        request.setUsername("user6");
+        request.setPassword("hbkdjswkhbw");
+
+        User existingUser = User.builder()
+                .id(UUID.randomUUID())
+                .username("user6")
+                .password("encoded-password")
+                .createdAt(Instant.now())
+                .build();
+
+        when(userRepository.findByUsername(request.getUsername())).thenReturn(Optional.of(existingUser));
+
+        // When
+        // Then
+        assertThrows(UserAlreadyExistsException.class, () -> authService.create(request));
+
+        verify(userRepository, never()).save(any());
+        verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
+    void create_throwsAuthenticationException_whenSaveFails() {
+        // Given
+        LoginRequest request = new LoginRequest();
+        request.setUsername("user6");
+        request.setPassword("hbkdjswkhbw");
+
+        when(userRepository.findByUsername(request.getUsername())).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded-password");
+        when(userRepository.save(any())).thenThrow(new RuntimeException("db is down"));
+
+        // When
+        // Then
+        assertThrows(AuthenticationException.class, () -> authService.create(request));
     }
 }
