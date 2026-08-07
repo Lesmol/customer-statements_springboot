@@ -11,7 +11,7 @@ IAM user with an access key for you (region `af-south-1`):
 [Launch Stack](https://af-south-1.console.aws.amazon.com/cloudformation/home?region=af-south-1#/stacks/quickcreate?templateURL=https%3A%2F%2Fcf-templates-h7u79i6ytuzc-af-south-1.s3.af-south-1.amazonaws.com%2F2026-07-30T173505.362Zlpi-springboot-local-dev-s3.yaml&stackName=springboot-s3-stack)
 
 After the stack finishes creating, get the bucket name, access key ID, and secret access key from the stack's
-**Outputs** tab, then skip ahead to [step 4](#4-configure-the-project) to configure the project.
+**Outputs** tab, then skip ahead to [step 4 (Configure the project)](#4-configure-the-project) to configure the project.
 
 ## 1. Create an S3 bucket
 
