@@ -5,6 +5,7 @@ import com.lvmp.customerstatements_springboot.exception.DocumentSaveException;
 import com.lvmp.customerstatements_springboot.model.request.UploadStatementRequest;
 import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse;
 import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
+import com.lvmp.customerstatements_springboot.model.response.PageResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
 import com.lvmp.customerstatements_springboot.exception.S3UploadException;
 import com.lvmp.customerstatements_springboot.persistence.entity.Document;
@@ -15,6 +16,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -31,7 +37,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -132,18 +137,17 @@ public class StatementService {
         return ResponseEntity.ok().body(response);
     }
 
-    public ResponseEntity<List<GetUserDocumentsResponse>> getStatements(UUID userID) {
-        List<Document> documents = documentRepository.getDocumentsByUserId(userID);
-        log.info("Found {} statement(s) for user {}", documents.size(), userID);
-        return ResponseEntity.ok().body(toDocumentResponse(documents));
+    public ResponseEntity<PageResponse<GetUserDocumentsResponse>> getStatements(UUID userID, int page, int size) {
+        Pageable pagination = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "uploadedAt"));
+        Page<Document> documents = documentRepository.getDocumentsByUserId(userID, pagination);
+        log.info("Found {} statement(s) for user {}", documents.getNumberOfElements(), userID);
+        return ResponseEntity.ok().body(PageResponse.response(documents.map(this::toDocumentResponse)));
     }
 
-    private List<GetUserDocumentsResponse> toDocumentResponse(List<Document> documents) {
-        return documents.stream()
-                .map(doc -> GetUserDocumentsResponse.builder()
-                        .documentId(doc.getId())
-                        .uploadedAt(doc.getUploadedAt())
-                        .build())
-                .toList();
+    private GetUserDocumentsResponse toDocumentResponse(Document document) {
+        return GetUserDocumentsResponse.builder()
+                .documentId(document.getId())
+                .uploadedAt(document.getUploadedAt())
+                .build();
     }
 }

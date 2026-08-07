@@ -3,6 +3,7 @@ package com.lvmp.customerstatements_springboot.controller;
 import com.lvmp.customerstatements_springboot.model.request.UploadStatementRequest;
 import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse;
 import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
+import com.lvmp.customerstatements_springboot.model.response.PageResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
 import com.lvmp.customerstatements_springboot.service.StatementService;
 import jakarta.validation.Valid;
@@ -12,7 +13,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,7 +32,10 @@ public class StatementsController {
     }
 
     @GetMapping("/documents")
-    public ResponseEntity<List<GetUserDocumentsResponse>> getStatements(@AuthenticationPrincipal UUID userID) {
-        return statementService.getStatements(userID);
+    public ResponseEntity<PageResponse<GetUserDocumentsResponse>> getStatements(
+            @AuthenticationPrincipal UUID userID,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return statementService.getStatements(userID, page, size);
     }
 }
