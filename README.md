@@ -53,12 +53,13 @@ docker compose down
 
 ## API overview
 
-| Method | Path                                 | Description                             |
-|--------|--------------------------------------|-----------------------------------------|
-| POST   | `/api/auth/v1/login`                 | Authenticate and receive a JWT          |
-| POST   | `/api/statements/v1/upload-document` | Upload a statement file (multipart)     |
-| GET    | `/api/statements/v1/{documentId}`    | Get a pre-signed download URL           |
-| GET    | `/api/statements/v1/documents`       | List the authenticated user's documents |
+| Method | Path                                 | Description                                                    |
+|--------|--------------------------------------|------------------------------------------------------------------|
+| POST   | `/api/auth/v1/create`                | Create a new user                                               |
+| POST   | `/api/auth/v1/login`                 | Authenticate and receive a JWT                                  |
+| POST   | `/api/statements/v1/upload-document` | Upload a statement file (multipart)                              |
+| GET    | `/api/statements/v1/{documentId}`    | Get a pre-signed download URL                                    |
+| GET    | `/api/statements/v1/documents`       | List the authenticated user's documents (paginated, `page`/`size` query params) |
 
 Requests to `/api/statements/**` require an `Authorization: Bearer <token>` header obtained from the login endpoint.
 
@@ -80,20 +81,24 @@ Log in as any of them to obtain a JWT, then use that token to call the `/api/sta
 
 A ready-to-use Postman collection is available at [
 `postman/customer-statements.postman_collection.json`](postman/customer-statements.postman_collection.json). It
-contains four requests (**Login**, **Upload Document**, **Get Download Link**, and **Get All Documents**) and a
-collection-level bearer auth wired to a `token` variable, so you don't need to copy/paste JWTs between requests.
+contains five requests (**Create user**, **Login**, **Upload Document**, **Get Download Link**, and **Get All
+Documents**) and a collection-level bearer auth wired to a `token` variable, so you don't need to copy/paste JWTs
+between requests.
 
 To use it:
 
 1. Download the file (or clone the repo) and open Postman.
 2. **Import** → select the file.
-3. Requests are pointed at `http://localhost:8080`. Run **Login** first; its body defaults to `user1`/`Test@123`
+3. Requests are pointed at `http://localhost:8080`. Optionally run **Create user** to register a new user (or skip
+   this and use one of the seeded users below).
+4. Run **Login**; its body defaults to `user1`/`Test@123`
    (the requests for `user2` and `user3` are included as commented out JSON in the same body; swap them in to test
    as a different seeded user). A script on the request automatically saves the returned JWT into the `token`
    collection variable, which every other request sends via `Authorization: Bearer {{token}}`.
-4. Run **Upload Document**, attaching a file in the `file` form field, to create a statement for the logged-in user.
-5. Run **Get All Documents** to list that user's uploaded statements and copy a `documentId` from the response.
-6. For **Get Download Link**, append the `documentId` to the URL (`/api/statements/v1/{documentId}`) to get a
+5. Run **Upload Document**, attaching a file in the `file` form field, to create a statement for the logged-in user.
+6. Run **Get All Documents** to list that user's uploaded statements and copy a `documentId` from the response. Use
+   the `page` and `size` query params to page through results.
+7. For **Get Download Link**, append the `documentId` to the URL (`/api/statements/v1/{documentId}`) to get a
    download link for that statement.
 
 Auth is per user, logging in as a different seeded user and repeating steps 4 - 6 is a quick way to confirm
@@ -102,6 +107,11 @@ that users can only see their own documents.
 ### curl example
 
 ```bash
+# Create a user
+curl -X POST http://localhost:8080/api/auth/v1/create \
+  -H "Content-Type: application/json" \
+  -d '{"username": "user1", "password": "Test@123"}'
+
 # Log in
 curl -X POST http://localhost:8080/api/auth/v1/login \
   -H "Content-Type: application/json" \
@@ -112,8 +122,8 @@ curl -X POST http://localhost:8080/api/statements/v1/upload-document \
   -H "Authorization: Bearer TOKEN" \
   -F "file=@/path/to/statement.pdf"
 
-# List your documents
-curl http://localhost:8080/api/statements/v1/documents \
+# List your documents (page/size are optional, defaulting to page=0, size=10)
+curl "http://localhost:8080/api/statements/v1/documents?page=0&size=10" \
   -H "Authorization: Bearer TOKEN"
 
 # Get a download link (replace DOCUMENT_ID with an id from the list above)
