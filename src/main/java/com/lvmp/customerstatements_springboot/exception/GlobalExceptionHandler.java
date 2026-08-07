@@ -3,6 +3,7 @@ package com.lvmp.customerstatements_springboot.exception;
 import com.lvmp.customerstatements_springboot.model.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,6 +20,8 @@ public class GlobalExceptionHandler {
     private static final String AN_ERROR_OCCURRED = "An unexpected error occurred";
     private static final String FILE_PROCESSING_ERROR = "An error occurred while processing your file";
     private static final String VALIDATION_FAILED = "Validation failed";
+    private static final String USER_ALREADY_EXISTS = "User already exists";
+    private static final String AUTHENTICATION_ERROR = "An error occurred during authentication";
     private static final String DOCUMENT_SAVE_ERROR = "An error occurred while uploading your statement";
     private static final String DOCUMENT_NOT_FOUND = "Document not found";
 
@@ -42,9 +45,32 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException e) {
         log.error(e.getMessage(), e);
 
-        return ResponseEntity.status(401).body(
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 ErrorResponse.builder()
                         .message(VALIDATION_FAILED)
+                        .description("Incorrect username or password")
+                        .build());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException e) {
+        log.error(e.getMessage(), e);
+
+        return ResponseEntity.internalServerError().body(
+                ErrorResponse.builder()
+                        .message(AUTHENTICATION_ERROR)
+                        .description(e.getMessage())
+                        .build());
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(UserAlreadyExistsException e) {
+        log.error(e.getMessage(), e);
+
+        return ResponseEntity.badRequest().body(
+                ErrorResponse.builder()
+                        .message(USER_ALREADY_EXISTS)
+                        .description(e.getMessage())
                         .build());
     }
 
@@ -64,7 +90,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDocumentNotFoundException(DocumentNotFoundException e) {
         log.warn(e.getMessage(), e);
 
-        return ResponseEntity.status(404).body(
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 ErrorResponse.builder()
                         .message(DOCUMENT_NOT_FOUND)
                         .build()
