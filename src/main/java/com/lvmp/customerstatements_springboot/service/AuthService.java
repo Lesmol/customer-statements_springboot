@@ -6,10 +6,13 @@ import com.lvmp.customerstatements_springboot.persistence.entity.User;
 import com.lvmp.customerstatements_springboot.persistence.repository.UserRepository;
 import com.lvmp.customerstatements_springboot.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +20,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    @Value("${app.jwt.expiration-ms}")
+    private long expirationMs;
 
     public ResponseEntity<AuthResponse> login(LoginRequest request) {
         authenticationManager.authenticate(
@@ -29,6 +34,7 @@ public class AuthService {
 
         return ResponseEntity.ok().body(AuthResponse.builder()
                 .token(token)
+                .expiresIn(Duration.ofMillis(expirationMs).getSeconds())
                 .build());
     }
 }
