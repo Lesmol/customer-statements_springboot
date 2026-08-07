@@ -20,6 +20,7 @@ public class GlobalExceptionHandler {
     private static final String AN_ERROR_OCCURRED = "An unexpected error occurred";
     private static final String FILE_PROCESSING_ERROR = "An error occurred while processing your file";
     private static final String VALIDATION_FAILED = "Validation failed";
+    private static final String AUTHENTICATION_FAILED = "Authentication failed";
     private static final String USER_ALREADY_EXISTS = "User already exists";
     private static final String AUTHENTICATION_ERROR = "An error occurred during authentication";
     private static final String DOCUMENT_SAVE_ERROR = "An error occurred while uploading your statement";
@@ -47,7 +48,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 ErrorResponse.builder()
-                        .message(VALIDATION_FAILED)
+                        .message(AUTHENTICATION_FAILED)
                         .description("Incorrect username or password")
                         .build());
     }

@@ -36,7 +36,10 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new AuthenticationException("Authenticated user not found: " + request.getUsername()));
+                .orElseThrow(() -> {
+                    log.error("Authenticated user not found: {}", request.getUsername());
+                    return new AuthenticationException("We couldn't sign you in right now. Please try again later.");
+                });
 
         String token = jwtService.generateToken(user.getId().toString());
 
