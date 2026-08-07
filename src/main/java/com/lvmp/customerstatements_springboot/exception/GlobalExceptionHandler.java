@@ -94,6 +94,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 ErrorResponse.builder()
                         .message(DOCUMENT_NOT_FOUND)
+                        .description(e.getMessage())
                         .build()
         );
     }
