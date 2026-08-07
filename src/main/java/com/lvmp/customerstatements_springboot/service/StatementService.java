@@ -75,15 +75,15 @@ public class StatementService {
                     .documentId(documentId.toString())
                     .build());
         } catch (SdkClientException | S3Exception e) {
-            log.error("Failed to upload statement ({}) to s3", documentId, e);
-            throw new S3UploadException("We couldn't upload your statement right now. Please try again later.");
+            log.error("Failed to upload statement ({}) to s3", documentId);
+            throw new S3UploadException("We couldn't upload your statement right now. Please try again later.", e);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Failed to save {} to database", documentId, e);
+            log.error("Failed to save {} to database", documentId);
             s3Client.deleteObject(DeleteObjectRequest.builder()
                     .bucket(bucketName)
                     .key(documentId.toString())
                     .build());
-            throw new DocumentSaveException("We couldn't save your statement right now. Please try again later.");
+            throw new DocumentSaveException("We couldn't save your statement right now. Please try again later.", e);
         }
     }
 
