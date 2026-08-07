@@ -30,3 +30,5 @@ app:
 logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n%ex{3, org.springframework, org.apache, org.hibernate, com.zaxxer, jdk.internal, java.base}"
+  level:
+    root: debug

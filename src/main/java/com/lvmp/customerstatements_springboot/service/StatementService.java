@@ -63,7 +63,7 @@ public class StatementService {
                             request.getFile().getSize()
                     )
             );
-            log.debug("Uploaded statement ({}) to s3 bucket {}", documentId, bucketName);
+            log.info("Uploaded statement ({}) to s3 bucket {}", documentId, bucketName);
 
             documentRepository.save(Document.builder()
                     .id(documentId)
@@ -96,7 +96,7 @@ public class StatementService {
         GetDocumentResponse cachedResponse = redisService.getPreSignedUrl(documentId);
 
         if (cachedResponse != null) {
-            log.debug("Returning cached pre-signed URL for statement ({})", documentId);
+            log.info("Returning cached pre-signed URL for statement ({})", documentId);
             return ResponseEntity.ok().body(cachedResponse);
         }
 
@@ -127,14 +127,14 @@ public class StatementService {
                 .build();
 
         redisService.putPreSignedUrl(documentId, response);
-        log.debug("Generated and cached pre-signed URL for statement ({}), expiring at {}", documentId, response.getExpiresAt());
+        log.info("Generated and cached pre-signed URL for statement ({}), expiring at {}", documentId, response.getExpiresAt());
 
         return ResponseEntity.ok().body(response);
     }
 
     public ResponseEntity<List<GetUserDocumentsResponse>> getStatements(UUID userID) {
         List<Document> documents = documentRepository.getDocumentsByUserId(userID);
-        log.debug("Found {} statement(s) for user {}", documents.size(), userID);
+        log.info("Found {} statement(s) for user {}", documents.size(), userID);
         return ResponseEntity.ok().body(toDocumentResponse(documents));
     }
 
