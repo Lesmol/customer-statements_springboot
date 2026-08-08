@@ -12,14 +12,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import java.io.IOException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
     private static final String AN_ERROR_OCCURRED = "An unexpected error occurred";
-    private static final String FILE_PROCESSING_ERROR = "An error occurred while processing your file";
     private static final String VALIDATION_FAILED = "Validation failed";
     private static final String AUTHENTICATION_FAILED = "Authentication failed";
     private static final String USER_ALREADY_EXISTS = "User already exists";
@@ -119,17 +117,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(
                 ErrorResponse.builder()
                         .message(VALIDATION_FAILED)
-                        .build()
-        );
-    }
-
-    @ExceptionHandler(IOException.class)
-    public ResponseEntity<ErrorResponse> handleIOException(IOException e) {
-        log.error(e.getMessage(), e);
-
-        return ResponseEntity.internalServerError().body(
-                ErrorResponse.builder()
-                        .message(FILE_PROCESSING_ERROR)
                         .build()
         );
     }
