@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
@@ -68,7 +69,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(UserAlreadyExistsException e) {
         log.error(e.getMessage(), e);
 
-        return ResponseEntity.badRequest().body(
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
                 ErrorResponse.builder()
                         .message(USER_ALREADY_EXISTS)
                         .description(e.getMessage())
@@ -94,6 +95,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 ErrorResponse.builder()
                         .message(DOCUMENT_NOT_FOUND)
+                        .description(e.getMessage())
+                        .build()
+        );
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.warn(e.getMessage(), e);
+
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(
+                ErrorResponse.builder()
+                        .message(VALIDATION_FAILED)
                         .description(e.getMessage())
                         .build()
         );
