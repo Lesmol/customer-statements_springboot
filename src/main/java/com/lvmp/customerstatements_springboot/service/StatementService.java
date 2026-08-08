@@ -35,6 +35,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -51,7 +52,7 @@ public class StatementService {
     @Value("${app.s3.bucket-name}")
     private String bucketName;
 
-    public ResponseEntity<UploadDocumentResponse> uploadStatement(UUID userId, UploadStatementRequest request) throws IOException {
+    public ResponseEntity<UploadDocumentResponse> uploadStatement(UUID userId, UploadStatementRequest request) {
         UUID documentId = UUID.randomUUID();
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -60,11 +61,11 @@ public class StatementService {
                 .contentType(request.getFile().getContentType())
                 .build();
 
-        try {
+        try (InputStream inputStream = request.getFile().getInputStream()) {
             s3Client.putObject(
                     putObjectRequest,
                     RequestBody.fromInputStream(
-                            request.getFile().getInputStream(),
+                            inputStream,
                             request.getFile().getSize()
                     )
             );
@@ -79,7 +80,7 @@ public class StatementService {
             return ResponseEntity.ok().body(UploadDocumentResponse.builder()
                     .documentId(documentId.toString())
                     .build());
-        } catch (SdkClientException | S3Exception e) {
+        } catch (SdkClientException | S3Exception | IOException e) {
             log.error("Failed to upload statement ({}) to s3", documentId);
             throw new S3UploadException("We couldn't upload your statement right now. Please try again later.", e);
         } catch (DataAccessException | IllegalArgumentException e) {
