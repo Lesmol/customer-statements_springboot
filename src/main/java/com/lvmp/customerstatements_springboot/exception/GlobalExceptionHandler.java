@@ -114,9 +114,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
         log.error(e.getMessage(), e);
 
+        String description = "Invalid type on %s parameter".formatted(e.getName());
+
         return ResponseEntity.badRequest().body(
                 ErrorResponse.builder()
                         .message(VALIDATION_FAILED)
+                        .description(description)
                         .build()
         );
     }
