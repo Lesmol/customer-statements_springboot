@@ -23,6 +23,9 @@ public class Document {
     @Column(name = "user_id", nullable = false, updatable = false)
     private UUID userId;
 
+    @Column(name = "filename", nullable = false)
+    private String fileName;
+
     @CreationTimestamp
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private Instant uploadedAt;

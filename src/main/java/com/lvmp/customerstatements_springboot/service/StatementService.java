@@ -74,6 +74,7 @@ public class StatementService {
             documentRepository.save(Document.builder()
                     .id(documentId)
                     .userId(userId)
+                    .fileName(request.getFile().getOriginalFilename())
                     .build());
             log.info("Successfully uploaded statement ({}) for user {}", documentId, userId);
 
@@ -148,6 +149,7 @@ public class StatementService {
     private GetUserDocumentsResponse toDocumentResponse(Document document) {
         return GetUserDocumentsResponse.builder()
                 .documentId(document.getId())
+                .filename(document.getFileName())
                 .uploadedAt(document.getUploadedAt())
                 .build();
     }

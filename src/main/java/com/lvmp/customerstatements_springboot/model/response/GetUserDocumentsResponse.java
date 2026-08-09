@@ -10,5 +10,6 @@ import java.util.UUID;
 @Builder
 public class GetUserDocumentsResponse {
     private UUID documentId;
+    private String filename;
     private Instant uploadedAt;
 }
