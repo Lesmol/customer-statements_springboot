@@ -52,6 +52,10 @@ public class StatementService {
     @Value("${app.s3.bucket-name}")
     private String bucketName;
 
+    private static final int MAX_PAGE_SIZE = 25;
+    private static final int MIN_PAGE_SIZE = 1;
+    private static final int MIN_PAGE_NUMBER = 0;
+
     public ResponseEntity<UploadDocumentResponse> uploadStatement(UUID userId, UploadStatementRequest request) {
         UUID documentId = UUID.randomUUID();
 
@@ -140,7 +144,9 @@ public class StatementService {
     }
 
     public ResponseEntity<PageResponse<GetUserDocumentsResponse>> getStatements(UUID userID, int page, int size) {
-        Pageable pagination = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "uploadedAt"));
+        int pageNumber = Math.max(MIN_PAGE_NUMBER, page);
+        int pageSize = Math.clamp(size, MIN_PAGE_SIZE, MAX_PAGE_SIZE);
+        Pageable pagination = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.DESC, "uploadedAt"));
         Page<Document> documents = documentRepository.getDocumentsByUserId(userID, pagination);
         log.info("Found {} statement(s) for user {}", documents.getNumberOfElements(), userID);
         return ResponseEntity.ok().body(PageResponse.response(documents.map(this::toDocumentResponse)));
