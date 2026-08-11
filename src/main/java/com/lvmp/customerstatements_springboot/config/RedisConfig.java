@@ -1,5 +1,6 @@
 package com.lvmp.customerstatements_springboot.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +21,8 @@ import java.time.Duration;
 @EnableCaching
 public class RedisConfig {
     public static final String PRESIGNED_URLS_CACHE = "presignedUrls";
+    @Value("${app.redis.presign-url-ttl}")
+    private long PRESIGN_URL_TTL;
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
@@ -40,7 +43,7 @@ public class RedisConfig {
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(cacheConfiguration)
                 .withCacheConfiguration(PRESIGNED_URLS_CACHE,
-                        cacheConfiguration.entryTtl(Duration.ofMinutes(4).plusSeconds(30)))
+                        cacheConfiguration.entryTtl(Duration.ofSeconds(PRESIGN_URL_TTL)))
                 .build();
     }
 }

@@ -81,7 +81,27 @@ BUCKET_NAME=<the bucket name from step 1>
 ## Tearing it down
 
 When you're done and want to remove the AWS resources created above (to avoid ongoing storage costs and unused
-credentials lying around):
+credentials lying around), follow whichever set of steps matches how you created the resources.
+
+### If you used the one-click stack
+
+The stack owns the bucket, policy, and IAM user it created, so deleting the stack removes all three in one step.
+CloudFormation can't delete a non-empty bucket, though, so empty it first:
+
+1. **Empty the bucket.**
+    - Console: S3 -> your bucket -> **Empty** -> confirm by typing `permanently delete`.
+    - CLI: `aws s3 rm s3://YOUR_BUCKET_NAME --recursive`
+2. **Deactivate and delete the access key** that was output by the stack (deleting the stack removes the IAM user, but
+   revoking the key first ensures it stops working immediately).
+    - IAM -> Users -> the stack's user -> **Security credentials** -> find the access key -> **Actions** ->
+      **Deactivate** -> **Delete**.
+3. **Delete the stack.**
+    - Console: CloudFormation -> **Stacks** -> `springboot-s3-stack` (or the name you gave it) -> **Delete** -> confirm.
+    - CLI: `aws cloudformation delete-stack --stack-name springboot-s3-stack --region af-south-1`
+4. **Confirm deletion succeeded:** If deletion fails because the bucket still has objects in it, empty it again and retry
+   the stack deletion.
+
+### If you created the resources manually (steps 1-3)
 
 1. **Empty the bucket.** S3 buckets can't be deleted while they contain objects.
     - Console: S3 -> your bucket -> **Empty** -> confirm by typing the `permanently delete`.
