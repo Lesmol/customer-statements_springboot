@@ -21,4 +21,9 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
+
+    @PostMapping("/create")
+    public ResponseEntity<Void> create(@Valid @RequestBody LoginRequest request) {
+        return authService.create(request);
+    }
 }

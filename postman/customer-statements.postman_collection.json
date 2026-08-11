@@ -7,56 +7,108 @@
   },
   "item": [
     {
-      "name": "Login",
-      "event": [
+      "name": "Auth",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const response = pm.response.json();",
-              "",
-              "if (response && response.token) {",
-              "    return pm.collectionVariables.set(\"token\", response.token);",
-              "}",
-              ""
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "request": {
-        "auth": {
-          "type": "noauth"
-        },
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"username\": \"user1\",\n    \"password\": \"Test@123\"\n}\n// {\n//     \"username\": \"user2\",\n//     \"password\": \"Test@123\"\n// }\n// {\n//     \"username\": \"user3\",\n//     \"password\": \"Test@123\"\n// }",
-          "options": {
-            "raw": {
-              "language": "json"
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "if (response && response.token) {",
+                  "    return pm.collectionVariables.set(\"token\", response.token);",
+                  "}",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
             }
-          }
-        },
-        "url": {
-          "raw": "http://localhost:8080/api/auth/v1/login",
-          "protocol": "http",
-          "host": [
-            "localhost"
           ],
-          "port": "8080",
-          "path": [
-            "api",
-            "auth",
-            "v1",
-            "login"
-          ]
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"user1\",\n    \"password\": \"Test@123\"\n}\n// {\n//     \"username\": \"user2\",\n//     \"password\": \"Test@123\"\n// }\n// {\n//     \"username\": \"user3\",\n//     \"password\": \"Test@123\"\n// }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/v1/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "v1",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"LesediMolemi\",\n    \"password\": \"ajbwbljbe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/v1/create",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "v1",
+                "create"
+              ]
+            }
+          },
+          "response": []
         }
-      },
-      "response": []
+      ]
     },
     {
       "name": "Upload Document",
@@ -97,7 +149,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/statements/v1/",
+          "raw": "http://localhost:8080/api/statements/v1/4d99a131-06c0-473f-96d4-0cb16d73d8e2",
           "protocol": "http",
           "host": [
             "localhost"
@@ -107,7 +159,7 @@
             "api",
             "statements",
             "v1",
-            ""
+            "4d99a131-06c0-473f-96d4-0cb16d73d8e2"
           ]
         }
       },
@@ -119,7 +171,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/statements/v1/documents",
+          "raw": "http://localhost:8080/api/statements/v1/documents?page=0&size=4",
           "protocol": "http",
           "host": [
             "localhost"
@@ -130,6 +182,16 @@
             "statements",
             "v1",
             "documents"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "4"
+            }
           ]
         }
       },

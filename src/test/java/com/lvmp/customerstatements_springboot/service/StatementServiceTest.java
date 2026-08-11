@@ -6,6 +6,7 @@ import com.lvmp.customerstatements_springboot.exception.S3UploadException;
 import com.lvmp.customerstatements_springboot.model.request.UploadStatementRequest;
 import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse;
 import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
+import com.lvmp.customerstatements_springboot.model.response.PageResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
 import com.lvmp.customerstatements_springboot.persistence.entity.Document;
 import com.lvmp.customerstatements_springboot.persistence.repository.DocumentRepository;
@@ -18,6 +19,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -197,35 +199,51 @@ class StatementServiceTest {
     void getStatements_returnsDocumentsMappedForTheGivenUser() {
         // Given
         UUID userId = UUID.randomUUID();
+        int page = 0;
+        int size = 10;
         Document document = Document.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .uploadedAt(Instant.now())
                 .build();
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "uploadedAt"));
+        Page<Document> documentPage = new PageImpl<>(List.of(document), pageable, 1);
 
-        when(documentRepository.getDocumentsByUserId(userId)).thenReturn(List.of(document));
+        when(documentRepository.getDocumentsByUserId(userId, pageable)).thenReturn(documentPage);
 
         // When
-        ResponseEntity<List<GetUserDocumentsResponse>> response = statementService.getStatements(userId);
+        ResponseEntity<PageResponse<GetUserDocumentsResponse>> response = statementService.getStatements(userId, page, size);
 
         // Then
         assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().size());
-        assertEquals(document.getId(), response.getBody().getFirst().getDocumentId());
-        assertEquals(document.getUploadedAt(), response.getBody().getFirst().getUploadedAt());
+        PageResponse<GetUserDocumentsResponse> body = response.getBody();
+        assertEquals(1, body.getContent().size());
+        assertEquals(document.getId(), body.getContent().getFirst().getDocumentId());
+        assertEquals(document.getUploadedAt(), body.getContent().getFirst().getUploadedAt());
+        assertEquals(page, body.getPageNumber());
+        assertEquals(size, body.getPageSize());
+        assertEquals(1, body.getTotalElements());
+        assertEquals(1, body.getTotalPages());
+        assertTrue(body.isLast());
     }
 
     @Test
-    void getStatements_returnsEmptyList_whenUserHasNoDocuments() {
+    void getStatements_returnsEmptyPage_whenUserHasNoDocuments() {
         // Given
         UUID userId = UUID.randomUUID();
-        when(documentRepository.getDocumentsByUserId(userId)).thenReturn(List.of());
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "uploadedAt"));
+        Page<Document> documentPage = new PageImpl<>(List.of(), pageable, 0);
+
+        when(documentRepository.getDocumentsByUserId(userId, pageable)).thenReturn(documentPage);
 
         // When
-        ResponseEntity<List<GetUserDocumentsResponse>> response = statementService.getStatements(userId);
+        ResponseEntity<PageResponse<GetUserDocumentsResponse>> response = statementService.getStatements(userId, page, size);
 
         // Then
         assertNotNull(response.getBody());
-        assertTrue(response.getBody().isEmpty());
+        assertTrue(response.getBody().getContent().isEmpty());
+        assertEquals(0, response.getBody().getTotalElements());
     }
 }

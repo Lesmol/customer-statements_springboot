@@ -9,8 +9,9 @@ CREATE TABLE users
 CREATE TABLE documents
 (
     id          UUID PRIMARY KEY,
-    user_id     UUID        NOT NULL REFERENCES users (id),
-    uploaded_at TIMESTAMPTZ NOT NULL
+    user_id     UUID         NOT NULL REFERENCES users (id),
+    filename    VARCHAR(255) NOT NULL,
+    uploaded_at TIMESTAMPTZ  NOT NULL
 );
 
 CREATE TABLE document_retrievals

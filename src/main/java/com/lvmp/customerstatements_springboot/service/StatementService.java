@@ -5,6 +5,7 @@ import com.lvmp.customerstatements_springboot.exception.DocumentSaveException;
 import com.lvmp.customerstatements_springboot.model.request.UploadStatementRequest;
 import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse;
 import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
+import com.lvmp.customerstatements_springboot.model.response.PageResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
 import com.lvmp.customerstatements_springboot.exception.S3UploadException;
 import com.lvmp.customerstatements_springboot.persistence.entity.Document;
@@ -15,6 +16,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -29,9 +35,9 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -46,7 +52,11 @@ public class StatementService {
     @Value("${app.s3.bucket-name}")
     private String bucketName;
 
-    public ResponseEntity<UploadDocumentResponse> uploadStatement(UUID userId, UploadStatementRequest request) throws IOException {
+    private static final int MAX_PAGE_SIZE = 25;
+    private static final int MIN_PAGE_SIZE = 1;
+    private static final int MIN_PAGE_NUMBER = 0;
+
+    public ResponseEntity<UploadDocumentResponse> uploadStatement(UUID userId, UploadStatementRequest request) {
         UUID documentId = UUID.randomUUID();
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -55,44 +65,49 @@ public class StatementService {
                 .contentType(request.getFile().getContentType())
                 .build();
 
-        try {
+        try (InputStream inputStream = request.getFile().getInputStream()) {
             s3Client.putObject(
                     putObjectRequest,
                     RequestBody.fromInputStream(
-                            request.getFile().getInputStream(),
+                            inputStream,
                             request.getFile().getSize()
                     )
             );
+            log.info("Uploaded statement ({}) to s3 bucket {}", documentId, bucketName);
 
             documentRepository.save(Document.builder()
                     .id(documentId)
                     .userId(userId)
+                    .fileName(request.getFile().getOriginalFilename())
                     .build());
+            log.info("Successfully uploaded statement ({}) for user {}", documentId, userId);
 
             return ResponseEntity.ok().body(UploadDocumentResponse.builder()
                     .documentId(documentId.toString())
                     .build());
-        } catch (SdkClientException | S3Exception e) {
-            log.error("Failed to upload statement ({}) to s3", documentId, e);
-            throw new S3UploadException("We couldn't upload your statement right now. Please try again later.");
+        } catch (SdkClientException | S3Exception | IOException e) {
+            log.error("Failed to upload statement ({}) to s3", documentId);
+            throw new S3UploadException("We couldn't upload your statement right now. Please try again later.", e);
         } catch (DataAccessException | IllegalArgumentException e) {
-            log.error("Failed to save {} to database", documentId, e);
+            log.error("Failed to save {} to database", documentId);
             s3Client.deleteObject(DeleteObjectRequest.builder()
                     .bucket(bucketName)
                     .key(documentId.toString())
                     .build());
-            throw new DocumentSaveException("We couldn't save your statement right now. Please try again later.");
+            throw new DocumentSaveException("We couldn't save your statement right now. Please try again later.", e);
         }
     }
 
     public ResponseEntity<GetDocumentResponse> getStatement(UUID userID, UUID documentId) {
         if (!documentRepository.existsByIdAndUserId(documentId, userID)) {
+            log.warn("No document found with ID: {} for user {}", documentId, userID);
             throw new DocumentNotFoundException("No document found with ID: " + documentId);
         }
 
         GetDocumentResponse cachedResponse = redisService.getPreSignedUrl(documentId);
 
         if (cachedResponse != null) {
+            log.info("Returning cached pre-signed URL for statement ({})", documentId);
             return ResponseEntity.ok().body(cachedResponse);
         }
 
@@ -123,21 +138,25 @@ public class StatementService {
                 .build();
 
         redisService.putPreSignedUrl(documentId, response);
+        log.info("Generated and cached pre-signed URL for statement ({}), expiring at {}", documentId, response.getExpiresAt());
 
         return ResponseEntity.ok().body(response);
     }
 
-    public ResponseEntity<List<GetUserDocumentsResponse>> getStatements(UUID userID) {
-        List<Document> documents = documentRepository.getDocumentsByUserId(userID);
-        return ResponseEntity.ok().body(toDocumentResponse(documents));
+    public ResponseEntity<PageResponse<GetUserDocumentsResponse>> getStatements(UUID userID, int page, int size) {
+        int pageNumber = Math.max(MIN_PAGE_NUMBER, page);
+        int pageSize = Math.clamp(size, MIN_PAGE_SIZE, MAX_PAGE_SIZE);
+        Pageable pagination = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.DESC, "uploadedAt"));
+        Page<Document> documents = documentRepository.getDocumentsByUserId(userID, pagination);
+        log.info("Found {} statement(s) for user {}", documents.getNumberOfElements(), userID);
+        return ResponseEntity.ok().body(PageResponse.response(documents.map(this::toDocumentResponse)));
     }
 
-    private List<GetUserDocumentsResponse> toDocumentResponse(List<Document> documents) {
-        return documents.stream()
-                .map(doc -> GetUserDocumentsResponse.builder()
-                        .documentId(doc.getId())
-                        .uploadedAt(doc.getUploadedAt())
-                        .build())
-                .toList();
+    private GetUserDocumentsResponse toDocumentResponse(Document document) {
+        return GetUserDocumentsResponse.builder()
+                .documentId(document.getId())
+                .filename(document.getFileName())
+                .uploadedAt(document.getUploadedAt())
+                .build();
     }
 }

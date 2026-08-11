@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = StatementFileValidator.class)
 public @interface ValidStatementFile {
-    String message() default "File must be a non-empty PDF";
+    String message() default "File must be a valid PDF";
 
     Class<?>[] groups() default {};
 

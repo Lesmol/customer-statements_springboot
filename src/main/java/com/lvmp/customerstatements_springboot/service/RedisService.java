@@ -30,7 +30,7 @@ public class RedisService {
             log.info("{} does not exist in Redis", documentId);
             return null;
         } catch (Exception e) {
-            log.warn(e.getMessage(), e);
+            log.error(e.getMessage(), e);
             return null;
         }
     }
@@ -41,7 +41,7 @@ public class RedisService {
             presignedUrlCache.put(documentId, response);
             log.info("{} was added to Redis", documentId);
         } catch (Exception e) {
-            log.warn(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
     }
 }
