@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  cloud:
+    aws:
+      credentials:
+        access-key: test-access-key
+        secret-key: test-secret-key
+      region:
+        static: af-south-1
+  data:
+    redis:
+      host: localhost
+      port: 6379
+app:
+  s3:
+    bucket-name: test-bucket
+  jwt:
+    secret: 6Z8oQGGas4y2sJM86rNpgLIybss1IotZbrW60qlL2Jm
+    expiration-ms: 3600000
+  redis:
+    presign-url-ttl: 270
