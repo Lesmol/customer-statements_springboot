@@ -51,6 +51,8 @@ public class StatementService {
     private final DocumentRetrievalRepository documentRetrievalRepository;
     @Value("${app.s3.bucket-name}")
     private String bucketName;
+    @Value("${app.s3.presign-url-expiration-seconds}")
+    private long PRESIGN_URL_EXPIRATION_SECONDS;
 
     private static final int MAX_PAGE_SIZE = 25;
     private static final int MIN_PAGE_SIZE = 1;
@@ -111,7 +113,7 @@ public class StatementService {
             return ResponseEntity.ok().body(cachedResponse);
         }
 
-        Duration expiresAt = Duration.ofMinutes(5);
+        Duration expiresAt = Duration.ofSeconds(PRESIGN_URL_EXPIRATION_SECONDS);
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)

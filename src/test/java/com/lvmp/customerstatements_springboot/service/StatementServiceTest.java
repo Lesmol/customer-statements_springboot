@@ -63,10 +63,11 @@ class StatementServiceTest {
         statementService = new StatementService(
                 s3Client, s3Presigner, redisService, documentRepository, documentRetrievalRepository);
         ReflectionTestUtils.setField(statementService, "bucketName", "test-bucket");
+        ReflectionTestUtils.setField(statementService, "PRESIGN_URL_EXPIRATION_SECONDS", 300L);
     }
 
     @Test
-    void uploadStatement_savesToS3AndDatabase_whenBothSucceed() throws Exception {
+    void uploadStatement_savesToS3AndDatabase_whenBothSucceed() {
         // Given
         UUID userId = UUID.randomUUID();
         UploadStatementRequest request = new UploadStatementRequest();

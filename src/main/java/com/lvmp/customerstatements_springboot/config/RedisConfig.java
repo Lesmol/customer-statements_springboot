@@ -21,7 +21,7 @@ import java.time.Duration;
 @EnableCaching
 public class RedisConfig {
     public static final String PRESIGNED_URLS_CACHE = "presignedUrls";
-    @Value("${app.redis.presign-url-ttl}")
+    @Value("${app.redis.presign-url-ttl-seconds}")
     private long PRESIGN_URL_TTL;
 
     @Bean
