@@ -67,7 +67,7 @@ Set the following in your project's `.env` file (see the main [README](README.md
 ```env
 ACCESS_KEY=<the access key ID from step 3>
 SECRET_KEY=<the secret access key from step 3>
-REGION=<the bucket's region, e.g. af-south-1>
+REGION=<the bucket's region, e.g. af-south-1>   # optional - defaults to af-south-1
 BUCKET_NAME=<the bucket name from step 1>
 ```
 

@@ -18,7 +18,7 @@ one with:
 ```env
 ACCESS_KEY=<your AWS access key id>
 SECRET_KEY=<your AWS secret access key>
-REGION=<your AWS region> [app defaults to af-south-1]
+REGION=<your AWS region>   # optional - defaults to af-south-1
 BUCKET_NAME=<your S3 bucket name>
 ```
 
