@@ -1,6 +1,20 @@
 services:
-  app:
-    build: .
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "8080:8080"
+
+  login-service:
+    build:
+      context: .
+      dockerfile: login-service/Dockerfile
+
+  statement-service:
+    build:
+      context: .
+      dockerfile: statement-service/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -12,8 +26,6 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       REGION: ${REGION:-af-south-1}
       BUCKET_NAME: ${BUCKET_NAME}
-    ports:
-      - "8080:8080"
 
   postgres:
     image: postgres:18
