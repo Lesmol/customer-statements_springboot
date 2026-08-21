@@ -24,12 +24,10 @@ public class UserSeeder implements CommandLineRunner {
     public void run(String @NonNull ... args) {
         USERNAMES.stream()
                 .filter(username -> !userRepository.existsByUsername(username))
-                .forEach(username -> {
-                    userRepository.save(User.builder()
-                            .username(username)
-                            .password(passwordEncoder
-                                    .encode(DEFAULT_PASSWORD))
-                            .build());
-                });
+                .forEach(username -> userRepository.save(User.builder()
+                        .username(username)
+                        .password(passwordEncoder
+                                .encode(DEFAULT_PASSWORD))
+                        .build()));
     }
 }
