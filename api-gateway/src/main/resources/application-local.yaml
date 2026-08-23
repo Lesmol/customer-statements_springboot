@@ -1,26 +1,19 @@
 spring:
-  application:
-    name: api-gateway
   cloud:
     gateway:
       server:
         webmvc:
           routes:
             - id: login-service
-              uri: ${LOGIN_SERVICE_URI}
+              uri: ${LOGIN_SERVICE_URI:http://login-service:8081}
               predicates:
                 - Path=/api/auth/**
             - id: statement-service
-              uri: ${STATEMENT_SERVICE_URI}
+              uri: ${STATEMENT_SERVICE_URI:http://statement-service:8082}
               predicates:
                 - Path=/api/statement/**
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${OAUTH_ISSUER_URI}
-server:
-  port: 8080
-gateway:
-  claim-headers:
-    email: x-user-id
+          issuer-uri: ${OAUTH_ISSUER_URI:http://dex:5556/dex}

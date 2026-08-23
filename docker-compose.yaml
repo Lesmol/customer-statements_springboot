@@ -5,6 +5,8 @@ services:
       dockerfile: api-gateway/Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
 
   login-service:
     build:
