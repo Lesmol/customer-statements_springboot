@@ -11,7 +11,11 @@ spring:
             - id: statement-service
               uri: ${STATEMENT_SERVICE_URI:http://statement-service:8082}
               predicates:
-                - Path=/api/statement/**
+                - Path=/api/statements/**
+            - id: user-service
+              uri: ${USER_SERVICE_URI:http://user-service:8083}
+              predicates:
+                - Path=/api/users/**
   security:
     oauth2:
       resourceserver:

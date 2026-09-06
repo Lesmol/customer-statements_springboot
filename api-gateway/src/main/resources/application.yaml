@@ -13,7 +13,11 @@ spring:
             - id: statement-service
               uri: ${STATEMENT_SERVICE_URI}
               predicates:
-                - Path=/api/statement/**
+                - Path=/api/statements/**
+            - id: user-service
+              uri: ${USER_SERVICE_URI}
+              predicates:
+                - Path=/api/users/**
   security:
     oauth2:
       resourceserver:
@@ -23,4 +27,4 @@ server:
   port: 8080
 gateway:
   claim-headers:
-    email: x-user-id
+    sub: x-user-id

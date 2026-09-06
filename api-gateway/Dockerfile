@@ -6,6 +6,7 @@ COPY .mvn .mvn
 COPY api-gateway/pom.xml api-gateway/
 COPY login-service/pom.xml login-service/
 COPY statement-service/pom.xml statement-service/
+COPY user-service/pom.xml user-service/
 RUN ./mvnw -pl api-gateway dependency:go-offline -B
 
 COPY api-gateway/src api-gateway/src
