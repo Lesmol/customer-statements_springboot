@@ -32,11 +32,17 @@ app:
   s3:
     bucket-name: ${BUCKET_NAME}
     presign-url-expiration-seconds: ${PRESIGN_URL_EXPIRATION_SECONDS:300}
-  jwt:
-    secret: ${JWT_SECRET}
-    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
   redis:
     presign-url-ttl-seconds: ${PRESIGN_URL_TTL:270}
+  pagination:
+    max-page-size: ${MAX_PAGE_SIZE}
+    min-page-size: ${MIN_PAGE_SIZE}
+    min-page-number: ${MIN_PAGE_NUMBER}
+services:
+  user-service:
+    uri: ${USER_SERVICE_URI}
+    connect-timeout: 30s
+    read-timeout: 30s
 logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n%ex{3, org.springframework, org.apache, org.hibernate, com.zaxxer, jdk.internal, java.base}"

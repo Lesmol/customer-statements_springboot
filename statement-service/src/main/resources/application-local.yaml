@@ -5,7 +5,7 @@ spring:
   jackson:
     default-property-inclusion: non_null
   datasource:
-    url: ${DB_HOST:jdbc:postgresql://postgres:5432/customer_statements}
+    url: ${DB_HOST:jdbc:postgresql://statements-db:5432/customer_statements}
     username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD:postgres}
   jpa:
@@ -16,10 +16,13 @@ spring:
   cloud:
     aws:
       credentials:
-        access-key: ${ACCESS_KEY}
-        secret-key: ${SECRET_KEY}
+        access-key: test
+        secret-key: test
       region:
         static: ${REGION:af-south-1}
+      s3:
+        endpoint: ${AWS_S3_ENDPOINT:http://ministack:4566}
+        path-style-access-enabled: true
   data:
     redis:
       host: ${REDIS_HOST:redis}
@@ -28,11 +31,17 @@ app:
   s3:
     bucket-name: ${BUCKET_NAME}
     presign-url-expiration-seconds: ${PRESIGN_URL_EXPIRATION_SECONDS:300}
-  jwt:
-    secret: ${JWT_SECRET:6Z8oQGGas4y2sJM86rNpgLIybss1IotZbrW60qlL2Jm}
-    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
   redis:
     presign-url-ttl-seconds: ${PRESIGN_URL_TTL:270}
+  pagination:
+    max-page-size: 25
+    min-page-size: 1
+    min-page-number: 0
+services:
+  user-service:
+    uri: ${USER_SERVICE_URI:http://user-service:8083}
+    connect-timeout: 30s
+    read-timeout: 30s
 logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n%ex{3, org.springframework, org.apache, org.hibernate, com.zaxxer, jdk.internal, java.base}"

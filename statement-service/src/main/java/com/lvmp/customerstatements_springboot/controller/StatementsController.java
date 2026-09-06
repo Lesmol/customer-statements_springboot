@@ -5,36 +5,42 @@ import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse
 import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
 import com.lvmp.customerstatements_springboot.model.response.PageResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
+import com.lvmp.customerstatements_springboot.security.AdminAccessGuard;
 import com.lvmp.customerstatements_springboot.service.StatementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("api/statements/v1")
 @RequiredArgsConstructor
 public class StatementsController {
     private final StatementService statementService;
+    private final AdminAccessGuard adminAccessGuard;
 
     @PostMapping("/upload-document")
-    public ResponseEntity<UploadDocumentResponse> uploadStatement(@AuthenticationPrincipal UUID userID, @Valid @ModelAttribute UploadStatementRequest request) {
-        return statementService.uploadStatement(userID, request);
+    public ResponseEntity<UploadDocumentResponse> uploadStatement(@RequestHeader("X-User-Id") UUID userId, @Valid @ModelAttribute UploadStatementRequest request) throws NoSuchAlgorithmException, IOException {
+        adminAccessGuard.requireAdmin(userId);
+        return statementService.uploadStatement(request);
     }
 
     @GetMapping("/{documentId}")
-    public ResponseEntity<GetDocumentResponse> getStatement(@AuthenticationPrincipal UUID userID, @PathVariable UUID documentId) {
-        return statementService.getStatement(userID, documentId);
+    public ResponseEntity<GetDocumentResponse> getStatement(@RequestHeader("X-User-Id") UUID userId, @PathVariable UUID documentId) {
+        return statementService.getStatement(userId, documentId);
     }
 
     @GetMapping("/documents")
     public ResponseEntity<PageResponse<GetUserDocumentsResponse>> getStatements(
-            @AuthenticationPrincipal UUID userID,
+            @RequestHeader("X-User-Id") UUID userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return statementService.getStatements(userID, page, size);
+        return statementService.getStatements(userId, page, size);
     }
 }

@@ -26,6 +26,9 @@ public class Document {
     @Column(name = "filename", nullable = false)
     private String fileName;
 
+    @Column(name = "file_hash", nullable = false)
+    private String fileHash;
+
     @CreationTimestamp
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private Instant uploadedAt;

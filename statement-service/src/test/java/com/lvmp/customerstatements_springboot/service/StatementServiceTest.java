@@ -1,5 +1,7 @@
 package com.lvmp.customerstatements_springboot.service;
 
+import com.lvmp.customerstatements_springboot.client.UserClient;
+import com.lvmp.customerstatements_springboot.config.properties.ApplicationConfigurationProperties;
 import com.lvmp.customerstatements_springboot.exception.DocumentNotFoundException;
 import com.lvmp.customerstatements_springboot.exception.DocumentSaveException;
 import com.lvmp.customerstatements_springboot.exception.S3UploadException;
@@ -8,6 +10,7 @@ import com.lvmp.customerstatements_springboot.model.response.GetDocumentResponse
 import com.lvmp.customerstatements_springboot.model.response.GetUserDocumentsResponse;
 import com.lvmp.customerstatements_springboot.model.response.PageResponse;
 import com.lvmp.customerstatements_springboot.model.response.UploadDocumentResponse;
+import com.lvmp.customerstatements_springboot.model.response.UserView;
 import com.lvmp.customerstatements_springboot.persistence.entity.Document;
 import com.lvmp.customerstatements_springboot.persistence.repository.DocumentRepository;
 import com.lvmp.customerstatements_springboot.persistence.repository.DocumentRetrievalRepository;
@@ -22,7 +25,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -54,27 +56,33 @@ class StatementServiceTest {
     @Mock
     private DocumentRepository documentRepository;
     @Mock
+    private UserClient userClient;
+    @Mock
     private DocumentRetrievalRepository documentRetrievalRepository;
 
     private StatementService statementService;
 
     @BeforeEach
     void setUp() {
+        ApplicationConfigurationProperties configurationProperties = new ApplicationConfigurationProperties(
+                new ApplicationConfigurationProperties.RedisProperties(270L),
+                new ApplicationConfigurationProperties.S3Properties("test-bucket", 300L),
+                new ApplicationConfigurationProperties.PaginationProperties(25, 1, 0));
         statementService = new StatementService(
-                s3Client, s3Presigner, redisService, documentRepository, documentRetrievalRepository);
-        ReflectionTestUtils.setField(statementService, "bucketName", "test-bucket");
-        ReflectionTestUtils.setField(statementService, "PRESIGN_URL_EXPIRATION_SECONDS", 300L);
+                s3Client, userClient, s3Presigner, redisService, documentRepository, documentRetrievalRepository, configurationProperties);
     }
 
     @Test
-    void uploadStatement_savesToS3AndDatabase_whenBothSucceed() {
+    void uploadStatement_savesToS3AndDatabase_whenBothSucceed() throws Exception {
         // Given
         UUID userId = UUID.randomUUID();
         UploadStatementRequest request = new UploadStatementRequest();
+        request.setUsername("admin@example.com");
         request.setFile(new MockMultipartFile("file", "statement.pdf", "application/pdf", "content".getBytes()));
+        when(userClient.getByEmail(any())).thenReturn(new UserView(userId, "admin@example.com", "ADMIN"));
 
         // When
-        ResponseEntity<UploadDocumentResponse> response = statementService.uploadStatement(userId, request);
+        ResponseEntity<UploadDocumentResponse> response = statementService.uploadStatement(request);
 
         // Then
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -93,14 +101,16 @@ class StatementServiceTest {
         // Given
         UUID userId = UUID.randomUUID();
         UploadStatementRequest request = new UploadStatementRequest();
+        request.setUsername("admin@example.com");
         request.setFile(new MockMultipartFile("file", "statement.pdf", "application/pdf", "content".getBytes()));
+        when(userClient.getByEmail(any())).thenReturn(new UserView(userId, "admin@example.com", "ADMIN"));
 
         when(s3Client.putObject(any(PutObjectRequest.class), (RequestBody) any()))
                 .thenThrow(S3Exception.builder().message("s3 is down").build());
 
         // When
         // Then
-        assertThrows(S3UploadException.class, () -> statementService.uploadStatement(userId, request));
+        assertThrows(S3UploadException.class, () -> statementService.uploadStatement(request));
 
         verify(documentRepository, never()).save(any());
     }
@@ -110,14 +120,16 @@ class StatementServiceTest {
         // Given
         UUID userId = UUID.randomUUID();
         UploadStatementRequest request = new UploadStatementRequest();
+        request.setUsername("admin@example.com");
         request.setFile(new MockMultipartFile("file", "statement.pdf", "application/pdf", "content".getBytes()));
+        when(userClient.getByEmail(any())).thenReturn(new UserView(userId, "admin@example.com", "ADMIN"));
 
         when(documentRepository.save(any(Document.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         // When
         // Then
-        assertThrows(DocumentSaveException.class, () -> statementService.uploadStatement(userId, request));
+        assertThrows(DocumentSaveException.class, () -> statementService.uploadStatement(request));
 
         verify(s3Client, times(1)).deleteObject(any(DeleteObjectRequest.class));
     }

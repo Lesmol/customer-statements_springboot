@@ -23,8 +23,14 @@ app:
   s3:
     bucket-name: test-bucket
     presign-url-expiration-seconds: 300
-  jwt:
-    secret: 6Z8oQGGas4y2sJM86rNpgLIybss1IotZbrW60qlL2Jm
-    expiration-ms: 3600000
   redis:
     presign-url-ttl-seconds: 270
+  pagination:
+    max-page-size: 25
+    min-page-size: 1
+    min-page-number: 0
+services:
+  user-service:
+    uri: http://localhost:8083
+    connect-timeout: 2s
+    read-timeout: 3s
