@@ -1,0 +1,24 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: user-service
+  jackson:
+    default-property-inclusion: non_null
+  datasource:
+    url: ${DB_HOST}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+app:
+  pagination:
+    max-page-size: ${MAX_PAGE_SIZE:25}
+    min-page-size: ${MIN_PAGE_SIZE:1}
+    min-page-number: ${MIN_PAGE_NUMBER:0}
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n%ex{3, org.springframework, org.apache, org.hibernate, com.zaxxer, jdk.internal, java.base}"

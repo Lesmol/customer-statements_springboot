@@ -15,6 +15,7 @@
         <module>api-gateway</module>
         <module>login-service</module>
         <module>statement-service</module>
+        <module>user-service</module>
     </modules>
 
 </project>
