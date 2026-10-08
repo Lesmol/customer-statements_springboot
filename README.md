@@ -1,31 +1,34 @@
-# Customer Account Statements Service
+# Customer Account Statements
 
-A Spring Boot service for uploading, storing, and retrieving customer account statement. Files are stored in AWS S3,
-data is persisted on PostgreSQL, and pre-signed download URLs are cached in Redis. Access is protected with JWT-based
-authentication.
+A microservices system for uploading, storing, and retrieving customer account statements. An API gateway fronts three
+Spring Boot services and authenticates every request against [Dex](https://dexidp.io/) (OIDC). Statement files are
+stored in S3 — emulated locally by [MiniStack](https://github.com/ministackorg/ministack) — while documents and users
+each live in their own PostgreSQL database, and pre-signed download URLs are cached in Redis.
+
+## Architecture
+
+| Service             | Role                                                               | Host port |
+|---------------------|--------------------------------------------------------------------|-----------|
+| `api-gateway`       | Single entry point; validates the Dex token and routes traffic     | **8080**  |
+| `login-service`     | Exchanges credentials for a Dex token                              | internal  |
+| `statement-service` | Uploads/retrieves statements (S3 + `customer_statements` DB)       | internal  |
+| `user-service`      | Owns users & roles (`users` DB)                                    | internal  |
+| `dex`               | OIDC identity provider (seeded users)                             | 5556      |
+| `ministack`         | Local AWS S3 emulator                                             | 4566      |
+| `statements-db`     | PostgreSQL — document metadata                                    | internal  |
+| `user-db`           | PostgreSQL — users & roles                                        | internal  |
+| `redis`             | Pre-signed URL cache                                              | internal  |
+
+Only `8080` (gateway), `5556` (Dex), and `4566` (MiniStack) are published to the host; everything else is reachable only
+inside the Docker network.
+
+**Request flow:** a client sends `Authorization: Bearer <idToken>` to the gateway. The gateway validates the token,
+decodes the Dex subject into a user id, and forwards it downstream as the `X-User-Id` header. It then routes `/api/auth/**` → login-service, `/api/statements/**` → statement-service, and
+`/api/users/**` → user-service.
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) and Docker Compose
-- An AWS S3 bucket and credentials to access it — see [AWSSETUP.md](AWSSETUP.md) for how to set this up, or use the
-  [one-click deploy](AWSSETUP.md#quick-start-one-click-deploy) to create the bucket, policy, and IAM user in one step
-
-## Configuration
-
-The app is configured via environment variables, loaded by Docker Compose from a `.env` file in the project root. Create
-one with:
-
-```env
-ACCESS_KEY=<your AWS access key id>
-SECRET_KEY=<your AWS secret access key>
-REGION=<your AWS region>   # optional - defaults to af-south-1
-BUCKET_NAME=<your S3 bucket name>
-```
-
-See [AWSSETUP.md](AWSSETUP.md) for how to obtain `ACCESS_KEY`, `SECRET_KEY`, `REGION`, and `BUCKET_NAME`.
-
-All other configuration (database, Redis, JWT secret) has working defaults for local use, defined in
-`docker-compose.yaml` and `src/main/resources/application-local.yaml`.
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
 
 ## Running locally
 
@@ -35,15 +38,8 @@ From the project root:
 docker compose up --build
 ```
 
-This starts three containers:
-
-| Service    | Description                                   | Port |
-|------------|-----------------------------------------------|------|
-| `app`      | The Spring Boot application (`local` profile) | 8080 |
-| `postgres` | PostgreSQL 18 database                        | 5432 |
-| `redis`    | Redis 8 cache                                 | 6379 |
-
-Once running, the API is available at `http://localhost:8080`.
+This builds and starts the full stack (gateway, the three services, Dex, MiniStack, two Postgres databases, and Redis).
+Once healthy, the API is available at `http://localhost:8080`.
 
 To stop everything:
 
@@ -51,84 +47,93 @@ To stop everything:
 docker compose down
 ```
 
+All local configuration has working defaults (in `docker-compose.yaml` and each service's
+`application-local.yaml`), so no `.env` file is required.
+
+## Authentication & seeded users
+
+Authentication is handled by **Dex** using in-memory users defined in [`config.yaml`](config.yaml). The **username is
+the email**. Log in to receive an `idToken`, then send it as `Authorization: Bearer <idToken>` on every other request.
+
+| Email               | Password   | Role  |
+|---------------------|------------|-------|
+| `admin@example.com` | `password` | ADMIN |
+| `test1@example.com` | `test1`    | USER  |
+| `test2@example.com` | `test2`    | USER  |
+| `test3@example.com` | `test3`    | USER  |
+
+Roles matter: an **ADMIN** can upload statements (on behalf of any user) and list users; a **USER** can only view their
+own statements.
+
 ## API overview
 
-| Method | Path                                 | Description                                                    |
-|--------|--------------------------------------|------------------------------------------------------------------|
-| POST   | `/api/auth/v1/create`                | Create a new user                                               |
-| POST   | `/api/auth/v1/login`                 | Authenticate and receive a JWT                                  |
-| POST   | `/api/statements/v1/upload-document` | Upload a statement file (multipart)                              |
-| GET    | `/api/statements/v1/{documentId}`    | Get a pre-signed download URL                                    |
-| GET    | `/api/statements/v1/documents`       | List the authenticated user's documents (paginated, `page`/`size` query params) |
+| Method | Path                                 | Auth  | Description                                                        |
+|--------|--------------------------------------|-------|-------------------------------------------------------------------|
+| POST   | `/api/auth/v1/login`                 | none  | Authenticate (`{username, password}`) and receive an `idToken`    |
+| POST   | `/api/statements/v1/upload-document` | ADMIN | Upload a PDF (multipart `file` + `username` = target user's email) |
+| GET    | `/api/statements/v1/{documentId}`    | any   | Get a pre-signed download URL for one of your documents           |
+| GET    | `/api/statements/v1/documents`       | any   | List your documents (paginated via `page`/`size`)                 |
+| GET    | `/api/users/v1`                      | ADMIN | List users (paginated via `page`/`size`)                          |
 
-Requests to `/api/statements/**` require an `Authorization: Bearer <token>` header obtained from the login endpoint.
+Upload is **on behalf of** a user: the admin supplies the target user's email in the `username` field, and the document
+is stored against *that* user — so it appears when *they* list their documents, not the admin.
 
 ## Testing the application
 
-With `docker compose up --build` running, you can exercise the live API manually, either with Postman or `curl`.
-
-### Manual testing with seeded users
-
-Once `docker compose up --build` is running, three users are seeded automatically by `UserSeeder` (`local` profile only), all with password `Test@123`:
-
-- `user1`
-- `user2`
-- `user3`
-
-Log in as any of them to obtain a JWT, then use that token to call the `/api/statements/**` endpoints.
+With `docker compose up --build` running, exercise the live API with Postman or `curl`.
 
 ### Postman collection
 
-A ready-to-use Postman collection is available at [
-`postman/customer-statements.postman_collection.json`](postman/customer-statements.postman_collection.json). It
-contains five requests (**Create user**, **Login**, **Upload Document**, **Get Download Link**, and **Get All
-Documents**) and a collection-level bearer auth wired to a `token` variable, so you don't need to copy/paste JWTs
-between requests.
+A ready-to-use collection lives at
+[`postman/customer-statements.postman_collection.json`](postman/customer-statements.postman_collection.json). It has
+five requests (**Login**, **Upload Document**, **Get Download Link**, **Get All Documents**, **List Users**) and a
+collection-level bearer auth wired to a `token` variable, so you don't need to copy/paste JWTs.
 
 To use it:
 
-1. Download the file (or clone the repo) and open Postman.
-2. **Import** → select the file.
-3. Requests are pointed at `http://localhost:8080`. Optionally run **Create user** to register a new user (or skip
-   this and use one of the seeded users below).
-4. Run **Login**; its body defaults to `user1`/`Test@123`
-   (the requests for `user2` and `user3` are included as commented out JSON in the same body; swap them in to test
-   as a different seeded user). A script on the request automatically saves the returned JWT into the `token`
-   collection variable, which every other request sends via `Authorization: Bearer {{token}}`.
-5. Run **Upload Document**, attaching a file in the `file` form field, to create a statement for the logged-in user.
-6. Run **Get All Documents** to list that user's uploaded statements and copy a `documentId` from the response. Use
-   the `page` and `size` query params to page through results.
-7. For **Get Download Link**, append the `documentId` to the URL (`/api/statements/v1/{documentId}`) to get a
-   download link for that statement.
+1. **Import** the file into Postman.
+2. Requests target `{{baseUrl}}` (defaults to `http://localhost:8080`).
+3. Run **Login** — its body defaults to `admin@example.com`/`password` (the other seeded users are included as commented
+   JSON; swap them in to test as a different user). A script saves the returned `idToken` into the `token`
+   collection variable, which every other request sends as `Authorization: Bearer {{token}}`.
+4. Run **Upload Document**, attaching a PDF in the `file` field and setting `username` to the target user's email. Its
+    script captures the returned `documentId`.
+5. Run **Get Download Link** — it uses the captured `{{documentId}}` automatically.
+6. Run **Get All Documents** to page through the logged-in user's statements, or **List Users** (admin only) to list
+   users.
 
-Auth is per user, logging in as a different seeded user and repeating steps 4 - 6 is a quick way to confirm
-that users can only see their own documents.
+Because uploads are on behalf of a user, log in as that user (e.g. `test1@example.com`) to see the statement an admin
+created for them.
 
 ### curl example
 
 ```bash
-# Create a user
-curl -X POST http://localhost:8080/api/auth/v1/create \
+# Log in as the admin (username is the email) and capture the id token
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/v1/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "user1", "password": "Test@123"}'
+  -d '{"username": "admin@example.com", "password": "password"}' | jq -r .idToken)
 
-# Log in
-curl -X POST http://localhost:8080/api/auth/v1/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "user1", "password": "Test@123"}'
-
-# Upload a statement (replace TOKEN with the JWT from above)
+# Upload a statement on behalf of test1 (admin only; username = target user's email)
 curl -X POST http://localhost:8080/api/statements/v1/upload-document \
-  -H "Authorization: Bearer TOKEN" \
-  -F "file=@/path/to/statement.pdf"
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@/path/to/statement.pdf" \
+  -F "username=test1@example.com"
 
-# List your documents (page/size are optional, defaulting to page=0, size=10)
+# List users (admin only)
+curl "http://localhost:8080/api/users/v1?page=0&size=10" \
+  -H "Authorization: Bearer $TOKEN"
+
+# The document belongs to test1: log in as them to see it
+T1=$(curl -s -X POST http://localhost:8080/api/auth/v1/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "test1@example.com", "password": "test1"}' | jq -r .idToken)
+
+# List test1's documents, then get a pre-signed download link for one
 curl "http://localhost:8080/api/statements/v1/documents?page=0&size=10" \
-  -H "Authorization: Bearer TOKEN"
+  -H "Authorization: Bearer $TOKEN"
 
-# Get a download link (replace DOCUMENT_ID with an id from the list above)
 curl http://localhost:8080/api/statements/v1/DOCUMENT_ID \
-  -H "Authorization: Bearer TOKEN"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 [![My Skills](https://skillicons.dev/icons?i=aws,java,spring,git,redis,postgres,docker,postman)](https://skillicons.dev)

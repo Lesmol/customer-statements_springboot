@@ -1,0 +1,23 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: login-service
+              uri: ${LOGIN_SERVICE_URI:http://login-service:8081}
+              predicates:
+                - Path=/api/auth/**
+            - id: statement-service
+              uri: ${STATEMENT_SERVICE_URI:http://statement-service:8082}
+              predicates:
+                - Path=/api/statements/**
+            - id: user-service
+              uri: ${USER_SERVICE_URI:http://user-service:8083}
+              predicates:
+                - Path=/api/users/**
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH_ISSUER_URI:http://dex:5556/dex}

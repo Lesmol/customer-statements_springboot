@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: login-service
+              uri: ${LOGIN_SERVICE_URI}
+              predicates:
+                - Path=/api/auth/**
+            - id: statement-service
+              uri: ${STATEMENT_SERVICE_URI}
+              predicates:
+                - Path=/api/statements/**
+            - id: user-service
+              uri: ${USER_SERVICE_URI}
+              predicates:
+                - Path=/api/users/**
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH_ISSUER_URI}
+server:
+  port: 8080
+gateway:
+  claim-headers:
+    sub: x-user-id

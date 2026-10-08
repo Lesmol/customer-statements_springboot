@@ -18,8 +18,8 @@
                 "exec": [
                   "const response = pm.response.json();",
                   "",
-                  "if (response && response.token) {",
-                  "    return pm.collectionVariables.set(\"token\", response.token);",
+                  "if (response && response.idToken) {",
+                  "    return pm.collectionVariables.set(\"token\", response.idToken);",
                   "}",
                   ""
                 ],
@@ -37,7 +37,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"username\": \"user1\",\n    \"password\": \"Test@123\"\n}\n// {\n//     \"username\": \"user2\",\n//     \"password\": \"Test@123\"\n// }\n// {\n//     \"username\": \"user3\",\n//     \"password\": \"Test@123\"\n// }",
+              "raw": "{\n    \"username\": \"admin@example.com\",\n    \"password\": \"password\"\n}\n// {\n//     \"username\": \"test1@example.com\",\n//     \"password\": \"test1\"\n// }\n// {\n//     \"username\": \"test2@example.com\",\n//     \"password\": \"test2\"\n// }\n// {\n//     \"username\": \"test3@example.com\",\n//     \"password\": \"test3\"\n// }",
               "options": {
                 "raw": {
                   "language": "json"
@@ -45,12 +45,10 @@
               }
             },
             "url": {
-              "raw": "http://localhost:8080/api/auth/v1/login",
-              "protocol": "http",
+              "raw": "{{baseUrl}}/api/auth/v1/login",
               "host": [
-                "localhost"
+                "{{baseUrl}}"
               ],
-              "port": "8080",
               "path": [
                 "api",
                 "auth",
@@ -60,58 +58,29 @@
             }
           },
           "response": []
-        },
-        {
-          "name": "Create user",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"username\": \"LesediMolemi\",\n    \"password\": \"ajbwbljbe\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "http://localhost:8080/api/auth/v1/create",
-              "protocol": "http",
-              "host": [
-                "localhost"
-              ],
-              "port": "8080",
-              "path": [
-                "api",
-                "auth",
-                "v1",
-                "create"
-              ]
-            }
-          },
-          "response": []
         }
       ]
     },
     {
       "name": "Upload Document",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const response = pm.response.json();",
+              "",
+              "if (response && response.documentId) {",
+              "    pm.collectionVariables.set(\"documentId\", response.documentId);",
+              "}",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [],
@@ -123,16 +92,19 @@
               "type": "file",
               "uuid": "a3905548-fca8-45d3-b412-5c8d57cdd7c4",
               "value": null
+            },
+            {
+              "key": "username",
+              "value": "test1@example.com",
+              "type": "text"
             }
           ]
         },
         "url": {
-          "raw": "http://localhost:8080/api/statements/v1/upload-document",
-          "protocol": "http",
+          "raw": "{{baseUrl}}/api/statements/v1/upload-document",
           "host": [
-            "localhost"
+            "{{baseUrl}}"
           ],
-          "port": "8080",
           "path": [
             "api",
             "statements",
@@ -149,17 +121,15 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/statements/v1/4d99a131-06c0-473f-96d4-0cb16d73d8e2",
-          "protocol": "http",
+          "raw": "{{baseUrl}}/api/statements/v1/{{documentId}}",
           "host": [
-            "localhost"
+            "{{baseUrl}}"
           ],
-          "port": "8080",
           "path": [
             "api",
             "statements",
             "v1",
-            "4d99a131-06c0-473f-96d4-0cb16d73d8e2"
+            "{{documentId}}"
           ]
         }
       },
@@ -171,12 +141,10 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/statements/v1/documents?page=0&size=4",
-          "protocol": "http",
+          "raw": "{{baseUrl}}/api/statements/v1/documents?page=0&size=4",
           "host": [
-            "localhost"
+            "{{baseUrl}}"
           ],
-          "port": "8080",
           "path": [
             "api",
             "statements",
@@ -191,6 +159,35 @@
             {
               "key": "size",
               "value": "4"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List Users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/v1?page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "v1"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "10"
             }
           ]
         }
@@ -234,7 +231,15 @@
   ],
   "variable": [
     {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
       "key": "token",
+      "value": ""
+    },
+    {
+      "key": "documentId",
       "value": ""
     }
   ]

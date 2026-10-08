@@ -1,0 +1,20 @@
+spring:
+  jackson:
+    default-property-inclusion: non_null
+  datasource:
+    url: ${DB_HOST:jdbc:postgresql://user-db:5432/users}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: true
+app:
+  pagination:
+    max-page-size: 25
+    min-page-size: 1
+    min-page-number: 0
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n%ex{3, org.springframework, org.apache, org.hibernate, com.zaxxer, jdk.internal, java.base}"
